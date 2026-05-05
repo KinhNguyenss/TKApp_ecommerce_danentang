@@ -30,11 +30,22 @@ export default function WishlistScreen() {
                         <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/150' }} style={styles.image} />
                         <View style={styles.info}>
                             <Text style={styles.name}>{item.name}</Text>
+                            <Text style={styles.sellerName}>Shop: {item.sellerName || 'Cửa hàng mặc định'}</Text>
                             <Text style={styles.price}>{item.price.toLocaleString('vi-VN')} đ</Text>
+                            
+                            <View style={styles.actionRow}>
+                                <TouchableOpacity 
+                                    style={styles.buyNowBtn} 
+                                    onPress={() => navigation.navigate('Checkout', { buyNowProduct: item })}
+                                >
+                                    <Text style={styles.buyNowText}>Mua ngay</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity onPress={() => toggleWishlist(item)} style={styles.removeBtn}>
+                                    <Text style={styles.removeText}>Bỏ tim</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                        <TouchableOpacity onPress={() => toggleWishlist(item)} style={styles.removeBtn}>
-                            <Text style={styles.removeText}>Bỏ tim</Text>
-                        </TouchableOpacity>
                     </TouchableOpacity>
                 )}
             />
@@ -50,8 +61,12 @@ const styles = StyleSheet.create({
     card: { flexDirection: 'row', backgroundColor: '#fff', padding: 10, borderRadius: 10, marginBottom: 10, alignItems: 'center' },
     image: { width: 60, height: 60, borderRadius: 8, marginRight: 15 },
     info: { flex: 1 },
-    name: { fontSize: 16, fontWeight: 'bold' },
-    price: { color: '#D32F2F', marginTop: 5 },
-    removeBtn: { padding: 8, backgroundColor: '#FFEBEE', borderRadius: 5 },
-    removeText: { color: '#D32F2F', fontSize: 12 }
+    name: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+    sellerName: { fontSize: 13, color: '#1976D2', fontStyle: 'italic', marginTop: 2 },
+    price: { color: '#D32F2F', marginTop: 4, fontWeight: 'bold' },
+    actionRow: { flexDirection: 'row', marginTop: 10, alignItems: 'center' },
+    buyNowBtn: { backgroundColor: '#FF6F00', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 5, marginRight: 10 },
+    buyNowText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
+    removeBtn: { paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#FFEBEE', borderRadius: 5 },
+    removeText: { color: '#D32F2F', fontSize: 13 }
 });

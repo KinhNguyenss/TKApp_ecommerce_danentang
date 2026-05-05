@@ -63,10 +63,18 @@ export default function HomeScreen() {
                         <Text style={styles.price}>{item.price.toLocaleString()} đ</Text>
                         <Text style={styles.stock}>Kho: {item.quantity}</Text>
 
-                        {/* Nút thêm vào giỏ hàng vẫn hoạt động độc lập */}
-                        <TouchableOpacity style={styles.buyBtn} onPress={() => handleAddToCart(item)}>
-                            <Text style={styles.buyText}>+ Giỏ hàng</Text>
-                        </TouchableOpacity>
+                        {/* Nhóm nút tương tác */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+                            <TouchableOpacity style={[styles.buyBtn, { flex: 1, marginRight: 4 }]} onPress={() => handleAddToCart(item)}>
+                                <Text style={styles.buyText}>+ Giỏ</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.instantBtn, { flex: 1.2, marginLeft: 4 }]} 
+                                onPress={() => navigation.navigate('Checkout', { buyNowProduct: item })}
+                            >
+                                <Text style={styles.instantText}>Mua ngay</Text>
+                            </TouchableOpacity>
+                        </View>
                     </TouchableOpacity>
                 )}
             />
@@ -82,6 +90,8 @@ const styles = StyleSheet.create({
     name: { fontSize: 16, fontWeight: 'bold' },
     price: { color: '#D32F2F', fontWeight: 'bold', marginVertical: 5 },
     stock: { fontSize: 12, color: '#666' },
-    buyBtn: { backgroundColor: '#FF6F00', padding: 8, borderRadius: 5, marginTop: 10, alignItems: 'center' },
-    buyText: { color: '#fff', fontWeight: 'bold' }
+    buyBtn: { backgroundColor: '#FFF3E0', padding: 8, borderRadius: 5, marginTop: 10, alignItems: 'center', borderWidth: 1, borderColor: '#FFB74D' },
+    buyText: { color: '#E65100', fontWeight: 'bold', fontSize: 13 },
+    instantBtn: { backgroundColor: '#FF6F00', padding: 8, borderRadius: 5, marginTop: 10, alignItems: 'center' },
+    instantText: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
 });

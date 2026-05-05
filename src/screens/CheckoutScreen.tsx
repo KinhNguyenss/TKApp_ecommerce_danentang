@@ -3,14 +3,26 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList, I
 import { useCart } from '../contexts/CartContext';
 import { db } from '../config/firebaseConfig';
 import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function CheckoutScreen() {
     const { cartItems, totalPrice, clearCart } = useCart();
     const { currentUser } = useAuth();
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     
+    const buyNowProduct = route.params?.buyNowProduct;
+
+    // Dữ liệu hiển thị dựa trên luồng: Mua ngay hay từ Giỏ hàng
+    const displayItems = buyNowProduct 
+        ? [{ ...buyNowProduct, cartQuantity: 1 }] 
+        : cartItems;
+    
+    const displayTotal = buyNowProduct 
+        ? buyNowProduct.price 
+        : totalPrice;
+
     const [fullName, setFullName] = useState(currentUser?.displayName || '');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
@@ -35,13 +47,17 @@ export default function CheckoutScreen() {
                 address: address,
                 paymentMethod: paymentMethod,
                 status: 'pending',
-                items: cartItems,
-                total: totalPrice,
+                items: displayItems,
+                total: displayTotal,
                 createdAt: serverTimestamp()
             });
 
             await batch.commit();
-            clearCart();
+            
+            // Chỉ xóa giỏ hàng nếu mua từ Giỏ hàng
+            if (!buyNowProduct) {
+                clearCart();
+            }
             Alert.alert("Thành công", "Đơn hàng của bạn đã được đặt thành công!", [
                 { text: "OK", onPress: () => navigation.navigate('Home') }
             ]);
@@ -72,7 +88,7 @@ export default function CheckoutScreen() {
             {/* 1. Danh sách sản phẩm */}
             <Text style={styles.sectionTitle}>Sản phẩm đã chọn</Text>
             <View style={styles.productListContainer}>
-                {cartItems.map((item) => (
+                {displayItems.map((item: any) => (
                     <View key={item.id}>
                         {renderItem({ item })}
                     </View>
@@ -126,7 +142,7 @@ export default function CheckoutScreen() {
             <View style={styles.summaryContainer}>
                 <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Tổng tiền hàng:</Text>
-                    <Text style={styles.summaryValue}>{totalPrice.toLocaleString('vi-VN')} đ</Text>
+                    <Text style={styles.summaryValue}>{displayTotal.toLocaleString('vi-VN')} đ</Text>
                 </View>
                 <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Phí vận chuyển:</Text>
@@ -134,7 +150,7 @@ export default function CheckoutScreen() {
                 </View>
                 <View style={[styles.summaryRow, styles.totalRow]}>
                     <Text style={styles.totalLabel}>Tổng thanh toán:</Text>
-                    <Text style={styles.totalValue}>{totalPrice.toLocaleString('vi-VN')} đ</Text>
+                    <Text style={styles.totalValue}>{displayTotal.toLocaleString('vi-VN')} đ</Text>
                 </View>
             </View>
 

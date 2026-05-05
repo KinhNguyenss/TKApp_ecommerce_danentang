@@ -55,12 +55,19 @@ export default function ProductDetailScreen() {
             <View style={styles.footer}>
                 <View style={styles.btnRow}>
                     <TouchableOpacity style={styles.chatBtn} onPress={handleChat}>
-                        <Text style={styles.chatBtnText}>💬 Liên hệ Shop</Text>
+                        <Text style={styles.chatBtnText}>💬 Liên hệ</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.addCartBtn} onPress={handleAddToCart}>
-                        <Text style={styles.btnText}>Thêm vào giỏ</Text>
+                        <Text style={styles.btnText}>+ Giỏ hàng</Text>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity 
+                    style={styles.buyNowBtn} 
+                    onPress={() => navigation.navigate('Checkout', { buyNowProduct: product })}
+                >
+                    <Text style={styles.buyNowText}>MUA NGAY</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     );
@@ -77,8 +84,10 @@ const styles = StyleSheet.create({
     description: { fontSize: 15, color: '#555', lineHeight: 22 },
     footer: { padding: 20, borderTopWidth: 1, borderColor: '#eee', backgroundColor: '#fff' },
     btnRow: { flexDirection: 'row', justifyContent: 'space-between' },
-    chatBtn: { flex: 1, backgroundColor: '#E3F2FD', padding: 15, borderRadius: 10, alignItems: 'center', marginRight: 10 },
-    chatBtnText: { color: '#1976D2', fontSize: 16, fontWeight: 'bold' },
-    addCartBtn: { flex: 1.5, backgroundColor: '#FF6F00', padding: 15, borderRadius: 10, alignItems: 'center' },
-    btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+    chatBtn: { flex: 1, backgroundColor: '#E3F2FD', padding: 12, borderRadius: 10, alignItems: 'center', marginRight: 10 },
+    chatBtnText: { color: '#1976D2', fontSize: 15, fontWeight: 'bold' },
+    addCartBtn: { flex: 1.2, backgroundColor: '#FFF3E0', padding: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: '#FFB74D' },
+    btnText: { color: '#E65100', fontSize: 15, fontWeight: 'bold' },
+    buyNowBtn: { backgroundColor: '#FF6F00', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 12, elevation: 3 },
+    buyNowText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }
 });

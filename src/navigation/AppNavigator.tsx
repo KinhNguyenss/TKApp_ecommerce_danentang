@@ -44,8 +44,6 @@ function CustomerStack() {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="CustomerTabs" component={CustomerTabs} />
-            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Chi tiết sản phẩm' }} />
-            <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ headerShown: true, title: 'Thanh toán' }} />
         </Stack.Navigator>
     );
 }
@@ -110,8 +108,11 @@ export default function AppNavigator() {
                     <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ headerShown: true, title: 'Lịch sử đơn hàng' }} />
                     <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ headerShown: true, title: 'Mục yêu thích' }} />
                     <Stack.Screen name="Review" component={ReviewScreen} options={{ headerShown: true, title: 'Đánh giá sản phẩm' }} />
+                    <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Chi tiết sản phẩm' }} />
+                    <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ headerShown: true, title: 'Thanh toán' }} />
                 </Stack.Group>
             )}
+
         </Stack.Navigator>
     );
 }

@@ -13,7 +13,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ProductDetail: { product: Product }; // Cần truyền data sản phẩm vào
-  Checkout: undefined; // Checkout hiện tại lấy data từ Context nên không cần truyền param
+  Checkout: { buyNowProduct?: Product }; // Hỗ trợ Mua ngay hoặc mua từ Giỏ hàng
   OrderHistory: undefined;
   Chat: { sellerId?: string; customerId?: string; initialMessage?: string; chatTitle?: string }; // Màn hình Chat
   ChatList: undefined; // Màn hình Danh sách Chat
