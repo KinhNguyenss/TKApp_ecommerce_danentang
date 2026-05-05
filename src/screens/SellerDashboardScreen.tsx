@@ -6,6 +6,7 @@ import { db } from '../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SellerDashboardScreen() {
+    const navigation = useNavigation();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -163,6 +164,17 @@ export default function SellerDashboardScreen() {
                                 <Text style={styles.btnText}>{getNextActionText(item.status)}</Text>
                             </TouchableOpacity>
                         )}
+                        
+                        <TouchableOpacity
+                            style={styles.chatBtn}
+                            onPress={() => {
+                                if (!item.userId) return Alert.alert('Lỗi', 'Không tìm thấy thông tin khách hàng.');
+                                // Seller click nên truyền customerId
+                                (navigation.navigate as any)('Chat', { customerId: item.userId });
+                            }}
+                        >
+                            <Text style={styles.chatBtnText}>💬 Nhắn tin cho Khách</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
             />
@@ -183,5 +195,7 @@ const styles = StyleSheet.create({
     productsTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5 },
     productItem: { fontSize: 14, color: '#555', marginLeft: 5, marginBottom: 2 },
     btnAction: { padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
-    btnText: { color: '#fff', fontWeight: 'bold' }
+    btnText: { color: '#fff', fontWeight: 'bold' },
+    chatBtn: { backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+    chatBtnText: { color: '#2E7D32', fontSize: 14, fontWeight: 'bold' }
 });

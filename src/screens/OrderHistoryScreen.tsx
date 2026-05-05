@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,10 +69,7 @@ export default function OrderHistoryScreen() {
                     data={orders}
                     keyExtractor={item => item.id}
                     renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.card}
-                            onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-                        >
+                        <View style={styles.card}>
                             <View style={styles.headerRow}>
                                 <Text style={styles.orderId}>Mã: #{item.id.substring(0, 6).toUpperCase()}</Text>
                                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
@@ -83,13 +80,55 @@ export default function OrderHistoryScreen() {
                             <Text style={styles.date}>
                                 Ngày đặt: {item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString('vi-VN') : 'Mới đây'}
                             </Text>
-                            <Text style={styles.itemCount}>{item.items?.length || 0} sản phẩm</Text>
+                            
+                            <View style={styles.productsContainer}>
+                                {item.items && item.items.map((prod: any, index: number) => (
+                                    <View key={index} style={styles.productItem}>
+                                        <Text style={styles.productName} numberOfLines={1}>• {prod.name}</Text>
+                                        <View style={styles.productSubInfo}>
+                                            <Text style={styles.productQuantity}>Số lượng: {prod.cartQuantity || prod.quantity || 1}</Text>
+                                            <Text style={styles.productSeller}>Shop: {prod.sellerName || 'Cửa hàng mặc định'}</Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
 
                             <View style={styles.footerRow}>
                                 <Text style={styles.totalLabel}>Tổng tiền:</Text>
                                 <Text style={styles.totalPrice}>{item.total?.toLocaleString('vi-VN')} đ</Text>
                             </View>
-                        </TouchableOpacity>
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
+                                <TouchableOpacity 
+                                    style={[styles.chatBtn, { flex: 1, marginTop: 0, marginRight: 5 }]} 
+                                    onPress={() => {
+                                        const sellerId = item.items && item.items.length > 0 ? item.items[0].sellerId : null;
+                                        if (!sellerId) return Alert.alert('Lỗi', 'Không tìm thấy thông tin Shop của đơn hàng này.');
+                                        const msg = `Tôi cần hỗ trợ đơn hàng mã #${item.id.substring(0, 6).toUpperCase()}`;
+                                        // Mở màn hình Chat
+                                        (navigation.navigate as any)('Chat', { sellerId: sellerId, initialMessage: msg });
+                                    }}
+                                >
+                                    <Text style={styles.chatBtnText}>💬 Liên hệ Shop</Text>
+                                </TouchableOpacity>
+
+                                {(item.status === 'delivered' || item.status === 'completed') && (
+                                    <TouchableOpacity 
+                                        style={[styles.reviewBtn, { flex: 1, marginLeft: 5 }]} 
+                                        onPress={() => {
+                                            if (item.items && item.items.length > 0) {
+                                                // Mặc định truyền sản phẩm đầu tiên để đánh giá
+                                                (navigation.navigate as any)('Review', { product: item.items[0] });
+                                            } else {
+                                                Alert.alert('Lỗi', 'Đơn hàng không có sản phẩm để đánh giá.');
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.reviewBtnText}>⭐ Đánh giá</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </View>
                     )}
                 />
             )}
@@ -108,7 +147,17 @@ const styles = StyleSheet.create({
     statusText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
     date: { fontSize: 14, color: '#666', marginBottom: 5 },
     itemCount: { fontSize: 14, color: '#666', marginBottom: 10 },
+    productsContainer: { marginTop: 5, padding: 10, backgroundColor: '#f9f9f9', borderRadius: 8, marginBottom: 10 },
+    productItem: { marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 5 },
+    productName: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 3 },
+    productSubInfo: { flexDirection: 'row', justifyContent: 'space-between', marginLeft: 10 },
+    productQuantity: { fontSize: 13, color: '#555' },
+    productSeller: { fontSize: 13, color: '#1976D2', fontStyle: 'italic' },
     footerRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderColor: '#eee', paddingTop: 10 },
     totalLabel: { fontSize: 16, color: '#333' },
-    totalPrice: { fontSize: 18, fontWeight: 'bold', color: '#D32F2F' }
+    totalPrice: { fontSize: 18, fontWeight: 'bold', color: '#D32F2F' },
+    chatBtn: { backgroundColor: '#E3F2FD', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
+    chatBtnText: { color: '#1976D2', fontSize: 14, fontWeight: 'bold' },
+    reviewBtn: { backgroundColor: '#FFF3E0', padding: 12, borderRadius: 8, alignItems: 'center' },
+    reviewBtnText: { color: '#F57C00', fontSize: 14, fontWeight: 'bold' }
 });

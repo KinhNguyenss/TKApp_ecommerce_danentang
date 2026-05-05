@@ -8,6 +8,11 @@ import { useAuth } from '../contexts/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ChatScreen from '../screens/ChatScreen';
+import ChatListScreen from '../screens/ChatListScreen';
+import OrderHistoryScreen from '../screens/OrderHistoryScreen';
+import WishlistScreen from '../screens/WishlistScreen';
+import ReviewScreen from '../screens/ReviewScreen';
 
 // Import Screens Khách hàng
 import HomeScreen from '../screens/HomeScreen';
@@ -29,6 +34,7 @@ function CustomerTabs() {
         <Tab.Navigator screenOptions={{ tabBarActiveTintColor: '#FF6F00', headerStyle: { backgroundColor: '#FF6F00' }, headerTintColor: '#fff' }}>
             <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Khám phá' }} />
             <Tab.Screen name="Cart" component={CartScreen} options={{ title: 'Giỏ hàng' }} />
+            <Tab.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Tin nhắn' }} />
             <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Cá nhân' }} />
         </Tab.Navigator>
     );
@@ -62,7 +68,14 @@ function SellerTabs() {
                 options={{ title: 'Lên Kệ' }}
             />
 
-            {/* Tab 3: Hồ sơ / Đăng xuất */}
+            {/* Tab 3: Tin nhắn */}
+            <Tab.Screen
+                name="ChatList"
+                component={ChatListScreen}
+                options={{ title: 'Tin nhắn' }}
+            />
+
+            {/* Tab 4: Hồ sơ / Đăng xuất */}
             <Tab.Screen
                 name="Profile"
                 component={ProfileScreen}
@@ -91,6 +104,12 @@ export default function AppNavigator() {
                     ) : (
                         <Stack.Screen name="CustomerFlow" component={CustomerStack} />
                     )}
+
+                    {/* Các màn hình dùng chung cho cả 2 luồng */}
+                    <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: true, title: 'Trò chuyện' }} />
+                    <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ headerShown: true, title: 'Lịch sử đơn hàng' }} />
+                    <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ headerShown: true, title: 'Mục yêu thích' }} />
+                    <Stack.Screen name="Review" component={ReviewScreen} options={{ headerShown: true, title: 'Đánh giá sản phẩm' }} />
                 </Stack.Group>
             )}
         </Stack.Navigator>

@@ -27,6 +27,14 @@ export default function ProductDetailScreen() {
         }
     };
 
+    const handleChat = () => {
+        if (!product.sellerId) {
+            return Alert.alert('Thông báo', 'Sản phẩm này không có thông tin Shop.');
+        }
+        const msg = `Tôi đang quan tâm sản phẩm: ${product.name} - Giá: ${product.price.toLocaleString('vi-VN')} đ`;
+        navigation.navigate('Chat', { sellerId: product.sellerId, initialMessage: msg });
+    };
+
     return (
         <ScrollView style={styles.container}>
             <Image source={{ uri: product.imageUrl || 'https://via.placeholder.com/300' }} style={styles.image} />
@@ -45,9 +53,14 @@ export default function ProductDetailScreen() {
             </View>
 
             <View style={styles.footer}>
-                <TouchableOpacity style={styles.addCartBtn} onPress={handleAddToCart}>
-                    <Text style={styles.btnText}>Thêm vào giỏ hàng</Text>
-                </TouchableOpacity>
+                <View style={styles.btnRow}>
+                    <TouchableOpacity style={styles.chatBtn} onPress={handleChat}>
+                        <Text style={styles.chatBtnText}>💬 Liên hệ Shop</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.addCartBtn} onPress={handleAddToCart}>
+                        <Text style={styles.btnText}>Thêm vào giỏ</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </ScrollView>
     );
@@ -62,7 +75,10 @@ const styles = StyleSheet.create({
     price: { fontSize: 22, color: '#D32F2F', fontWeight: 'bold', marginTop: 10 },
     descTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
     description: { fontSize: 15, color: '#555', lineHeight: 22 },
-    footer: { padding: 20, borderTopWidth: 1, borderColor: '#eee' },
-    addCartBtn: { backgroundColor: '#FF6F00', padding: 15, borderRadius: 10, alignItems: 'center' },
-    btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
+    footer: { padding: 20, borderTopWidth: 1, borderColor: '#eee', backgroundColor: '#fff' },
+    btnRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    chatBtn: { flex: 1, backgroundColor: '#E3F2FD', padding: 15, borderRadius: 10, alignItems: 'center', marginRight: 10 },
+    chatBtnText: { color: '#1976D2', fontSize: 16, fontWeight: 'bold' },
+    addCartBtn: { flex: 1.5, backgroundColor: '#FF6F00', padding: 15, borderRadius: 10, alignItems: 'center' },
+    btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });

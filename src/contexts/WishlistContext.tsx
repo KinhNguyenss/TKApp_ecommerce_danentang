@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Product } from '../navigation/types';
+import { Product } from '../types';
 
 interface WishlistContextProps {
     wishlist: Product[];

@@ -10,7 +10,11 @@ export interface Product {
   name: string;
   price: number;
   imageUrl?: string;
+  description?: string;
+  category?: string;
   quantity?: number; // Số lượng tồn kho
+  sellerId?: string;
+  sellerName?: string;
 }
 
 export interface CartItem extends Product {
