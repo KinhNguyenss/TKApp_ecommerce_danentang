@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
-    ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView
+    ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
 export default function LoginScreen() {
@@ -38,11 +38,12 @@ export default function LoginScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header / Brand */}
                 <View style={styles.brandSection}>
-                    <View style={styles.logoCircle}>
-                        <Text style={styles.logoEmoji}>🏺</Text>
-                    </View>
-                    <Text style={styles.appName}>TKApp</Text>
-                    <Text style={styles.tagline}>Nền tảng thủ công mỹ nghệ Việt</Text>
+                    <Image
+                        source={require('../../../assets/logo.png')}
+                        style={{ width: 200, height: 70, marginBottom: 5 }}
+                        resizeMode="contain"
+                    />
+                    <Text style={styles.tagline}>Thế giới mua sắm trong tầm tay bạn</Text>
                 </View>
 
                 {/* Form Card */}

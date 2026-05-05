@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, ActivityIndicator } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { AppNavigationProp } from '../navigation/types';
-import { db } from '../config/firebaseConfig';
+import { AppNavigationProp } from '../../navigation/types';
+import { db } from '../../config/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export default function ProfileScreen() {
@@ -92,13 +92,13 @@ export default function ProfileScreen() {
                         <Text style={styles.editBtnText}>{isEditing ? 'Hủy' : 'Sửa ✏️'}</Text>
                     </TouchableOpacity>
                 </View>
-                
+
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Họ và Tên</Text>
-                    <TextInput 
-                        style={[styles.input, !isEditing && styles.disabledInput]} 
-                        value={hoTen} 
-                        onChangeText={setHoTen} 
+                    <TextInput
+                        style={[styles.input, !isEditing && styles.disabledInput]}
+                        value={hoTen}
+                        onChangeText={setHoTen}
                         placeholder="Nhập họ tên đầy đủ"
                         editable={isEditing}
                     />
@@ -106,10 +106,10 @@ export default function ProfileScreen() {
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Số điện thoại</Text>
-                    <TextInput 
-                        style={[styles.input, !isEditing && styles.disabledInput]} 
-                        value={phone} 
-                        onChangeText={setPhone} 
+                    <TextInput
+                        style={[styles.input, !isEditing && styles.disabledInput]}
+                        value={phone}
+                        onChangeText={setPhone}
                         placeholder="Nhập số điện thoại"
                         keyboardType="phone-pad"
                         editable={isEditing}
@@ -118,10 +118,10 @@ export default function ProfileScreen() {
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Địa chỉ giao hàng mặc định</Text>
-                    <TextInput 
-                        style={[styles.input, { height: 80 }, !isEditing && styles.disabledInput]} 
-                        value={address} 
-                        onChangeText={setAddress} 
+                    <TextInput
+                        style={[styles.input, { height: 80 }, !isEditing && styles.disabledInput]}
+                        value={address}
+                        onChangeText={setAddress}
                         placeholder="Nhập địa chỉ của bạn"
                         multiline
                         editable={isEditing}
@@ -129,8 +129,8 @@ export default function ProfileScreen() {
                 </View>
 
                 {isEditing && (
-                    <TouchableOpacity 
-                        style={[styles.updateBtn, updating && { opacity: 0.7 }]} 
+                    <TouchableOpacity
+                        style={[styles.updateBtn, updating && { opacity: 0.7 }]}
                         onPress={handleUpdateProfile}
                         disabled={updating}
                     >
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     avatarText: { fontSize: 30, fontWeight: 'bold', color: '#FF6F00' },
     name: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
     email: { fontSize: 14, color: '#FFD54F', marginTop: 5 },
-    
+
     formSection: { padding: 20, backgroundColor: '#fff', margin: 20, marginTop: -20, borderRadius: 15, elevation: 5 },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },

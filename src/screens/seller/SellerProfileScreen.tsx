@@ -3,9 +3,9 @@ import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
     Image, Alert, ActivityIndicator, Switch
 } from 'react-native';
-import { db } from '../config/firebaseConfig';
+import { db } from '../../config/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Crypto from 'expo-crypto';
 
@@ -20,9 +20,6 @@ interface ShopProfile {
     coverUrl: string;
     pickupAddress: string;
     returnAddress: string;
-    shippingGHN: boolean;
-    shippingGHTK: boolean;
-    shippingSPX: boolean;
     joinedAt?: any;
 }
 
@@ -35,9 +32,6 @@ export default function SellerProfileScreen() {
         coverUrl: '',
         pickupAddress: '',
         returnAddress: '',
-        shippingGHN: false,
-        shippingGHTK: false,
-        shippingSPX: false,
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -250,28 +244,7 @@ export default function SellerProfileScreen() {
                 />
             </View>
 
-            {/* === VẬN CHUYỂN === */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🚚 Đối tác vận chuyển</Text>
-                <Text style={styles.sectionSubtitle}>Chọn các đối tác vận chuyển bạn muốn liên kết</Text>
 
-                {[
-                    { key: 'shippingGHN', label: 'GHN — Giao Hàng Nhanh', icon: '🟠' },
-                    { key: 'shippingGHTK', label: 'GHTK — Giao Hàng Tiết Kiệm', icon: '🔵' },
-                    { key: 'shippingSPX', label: 'SPX — Shopee Express', icon: '🟠' },
-                ].map(item => (
-                    <View key={item.key} style={styles.switchRow}>
-                        <Text style={styles.switchLabel}>{item.icon} {item.label}</Text>
-                        <Switch
-                            value={profile[item.key as keyof ShopProfile] as boolean}
-                            onValueChange={val => setProfile(p => ({ ...p, [item.key]: val }))}
-                            trackColor={{ false: '#E5E7EB', true: '#2E7D32' }}
-                            thumbColor="#fff"
-                            disabled={!isEditing}
-                        />
-                    </View>
-                ))}
-            </View>
 
             {/* Nút Lưu */}
             {isEditing && (

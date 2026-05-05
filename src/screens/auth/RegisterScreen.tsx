@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
-    ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView
+    ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
 export default function RegisterScreen() {
@@ -37,10 +37,11 @@ export default function RegisterScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.brandSection}>
-                    <View style={styles.logoCircle}>
-                        <Text style={styles.logoEmoji}>🏺</Text>
-                    </View>
-                    <Text style={styles.appName}>TKApp</Text>
+                    <Image 
+                        source={require('../../../assets/logo.png')} 
+                        style={{ width: 180, height: 60, marginBottom: 5 }} 
+                        resizeMode="contain"
+                    />
                     <Text style={styles.tagline}>Tạo tài khoản và bắt đầu hành trình</Text>
                 </View>
 

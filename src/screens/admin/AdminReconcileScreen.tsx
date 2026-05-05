@@ -8,7 +8,7 @@ import {
     collection, query, where, onSnapshot,
     writeBatch, doc, increment
 } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { db } from '../../config/firebaseConfig';
 
 interface Order {
     id: string;

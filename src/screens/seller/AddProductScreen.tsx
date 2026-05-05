@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator, Image } from 'react-native';
-import { db } from '../config/firebaseConfig';
+import { db } from '../../config/firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Crypto from 'expo-crypto';
 

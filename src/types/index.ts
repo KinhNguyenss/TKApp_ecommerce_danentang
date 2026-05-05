@@ -13,6 +13,7 @@ export interface Product {
   description?: string;
   category?: string;
   quantity?: number; // Số lượng tồn kho
+  soldCount?: number; // Số lượng đã bán
   sellerId?: string;
   sellerName?: string;
   tags?: string[];

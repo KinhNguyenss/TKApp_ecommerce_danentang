@@ -31,9 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
 .env*.local
-serviceAccountKey.json
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +39,11 @@ serviceAccountKey.json
 # generated native folders
 /ios
 /android
+
+# Secrets
+.env
+be/.env
+serviceAccountKey.json
+be/serviceAccountKey.json
+*.json.key
+

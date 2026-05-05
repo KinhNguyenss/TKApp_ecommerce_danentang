@@ -18,6 +18,7 @@ export type RootStackParamList = {
   Chat: { sellerId?: string; customerId?: string; initialMessage?: string; chatTitle?: string }; // Màn hình Chat
   ChatList: undefined; // Màn hình Danh sách Chat
   Review: { product: any }; // Màn hình Đánh giá
+  PublicShop: { sellerId: string }; // Màn hình xem Shop công khai
 };
 
 export type AppNavigationProp = StackNavigationProp<RootStackParamList>;

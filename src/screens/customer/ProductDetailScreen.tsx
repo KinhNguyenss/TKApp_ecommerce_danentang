@@ -4,10 +4,10 @@ import {
     ScrollView, Alert, ActivityIndicator, FlatList
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
-import { RootStackParamList, AppNavigationProp } from '../navigation/types';
-import { useCart } from '../contexts/CartContext';
-import { useWishlist } from '../contexts/WishlistContext';
-import { db } from '../config/firebaseConfig';
+import { RootStackParamList, AppNavigationProp } from '../../navigation/types';
+import { useCart } from '../../contexts/CartContext';
+import { useWishlist } from '../../contexts/WishlistContext';
+import { db } from '../../config/firebaseConfig';
 import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
 type ProductDetailRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
@@ -145,9 +145,7 @@ export default function ProductDetailScreen() {
                 {/* Giá + Đã bán */}
                 <View style={styles.priceRow}>
                     <Text style={styles.price}>{product.price.toLocaleString('vi-VN')} đ</Text>
-                    {soldCount > 0 && (
-                        <Text style={styles.soldCount}>Đã bán: {soldCount}</Text>
-                    )}
+                    <Text style={styles.soldCount}>Đã bán: {(product.soldCount || 0) + soldCount}</Text>
                 </View>
 
                 {/* Rating tổng */}
@@ -173,7 +171,7 @@ export default function ProductDetailScreen() {
                 {product.sellerId && (
                     <TouchableOpacity
                         style={styles.shopCard}
-                        onPress={handleChat}
+                        onPress={() => navigation.navigate('PublicShop', { sellerId: product.sellerId! })}
                         activeOpacity={0.8}
                     >
                         <View style={styles.shopAvatarWrapper}>
@@ -190,9 +188,9 @@ export default function ProductDetailScreen() {
                             <Text style={styles.shopName}>
                                 🏪 {shopProfile?.shopName || product.sellerName || 'Cửa hàng'}
                             </Text>
-                            <Text style={styles.shopSub}>Bấm để nhắn tin với Shop</Text>
+                            <Text style={styles.shopSub}>Bấm để xem thông tin Shop</Text>
                         </View>
-                        <Text style={styles.shopArrow}>💬</Text>
+                        <Text style={styles.shopArrow}>❯</Text>
                     </TouchableOpacity>
                 )}
 

@@ -4,9 +4,9 @@ import {
     ActivityIndicator, TouchableWithoutFeedback, Keyboard, ScrollView
 } from 'react-native';
 import { collection, addDoc, updateDoc, query, where, getDocs, serverTimestamp, doc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { db } from '../../config/firebaseConfig';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Crypto from 'expo-crypto';
 
@@ -236,7 +236,7 @@ export default function ReviewScreen() {
                 {/* Nút gửi */}
                 <TouchableOpacity
                     style={[styles.submitBtn, (isSubmitting || isUploading) && { opacity: 0.7 },
-                        isEditMode && styles.submitBtnEdit]}
+                    isEditMode && styles.submitBtnEdit]}
                     onPress={handleSubmit}
                     disabled={isSubmitting || isUploading}
                 >

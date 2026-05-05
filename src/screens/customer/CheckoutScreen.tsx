@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { useCart } from '../contexts/CartContext';
-import { db } from '../config/firebaseConfig';
+import { useCart } from '../../contexts/CartContext';
+import { db } from '../../config/firebaseConfig';
 import { writeBatch, doc, collection, serverTimestamp, getDoc, increment } from 'firebase/firestore';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useStripe } from '@stripe/stripe-react-native';
 
 const PAYMENT_SERVER_URL = process.env.EXPO_PUBLIC_PAYMENT_SERVER_URL || 'http://10.0.2.2:3000';
@@ -16,15 +16,26 @@ export default function CheckoutScreen() {
     const route = useRoute<any>();
 
     const buyNowProduct = route.params?.buyNowProduct;
+    const [localItems, setLocalItems] = useState<any[]>([]);
 
-    // Dữ liệu hiển thị dựa trên luồng: Mua ngay hay từ Giỏ hàng
-    const displayItems = buyNowProduct
-        ? [{ ...buyNowProduct, cartQuantity: 1 }]
-        : cartItems;
+    // Khởi tạo danh sách sản phẩm
+    useEffect(() => {
+        if (buyNowProduct) {
+            setLocalItems([{ ...buyNowProduct, cartQuantity: 1 }]);
+        } else {
+            setLocalItems([...cartItems]);
+        }
+    }, [buyNowProduct, cartItems]);
 
-    const displayTotal = buyNowProduct
-        ? buyNowProduct.price
-        : totalPrice;
+    // Tính tổng tiền dựa trên localItems
+    const displayTotal = localItems.reduce((sum, item) => sum + (item.price * (item.cartQuantity || 1)), 0);
+
+    const updateLocalQuantity = (id: string, newQty: number) => {
+        if (newQty < 1) return;
+        setLocalItems(prev => prev.map(item => 
+            item.id === id ? { ...item, cartQuantity: newQty } : item
+        ));
+    };
 
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [fullName, setFullName] = useState(currentUser?.displayName || '');
@@ -55,45 +66,47 @@ export default function CheckoutScreen() {
 
     const saveOrderToFirestore = async (status: 'pending' | 'paid') => {
         const batch = writeBatch(db);
-        const orderRef = doc(collection(db, 'orders'));
-        const orderId = orderRef.id;
 
-        batch.set(orderRef, {
-            userId: currentUser?.uid,
-            customerName: fullName,
-            customerPhone: phone,
-            customerEmail: currentUser?.email || '',
-            address,
-            paymentMethod,
-            paymentStatus: status,
-            status: status === 'paid' ? 'ready_to_ship' : 'pending',
-            items: displayItems,
-            sellerIds: Array.from(new Set(displayItems.map((item: any) => item.sellerId || 'default_seller'))),
-            total: displayTotal,
-            createdAt: serverTimestamp(),
+        // Nhóm sản phẩm theo từng shop để tạo đơn riêng biệt
+        const itemsBySeller: { [sellerId: string]: any[] } = {};
+        localItems.forEach((item: any) => {
+            const sellerId = item.sellerId || 'default_seller';
+            if (!itemsBySeller[sellerId]) itemsBySeller[sellerId] = [];
+            itemsBySeller[sellerId].push(item);
         });
 
-        // Nếu đã thanh toán thẻ, cộng tiền vào Ví của các Shop
-        if (status === 'paid') {
-            // Tính tiền cho từng shop (đơn hàng có thể có nhiều sản phẩm từ nhiều shop)
-            const sellerEarnings: { [key: string]: number } = {};
-            displayItems.forEach((item: any) => {
-                const sellerId = item.sellerId || 'default_seller';
-                const itemTotal = item.price * (item.cartQuantity || 1);
-                sellerEarnings[sellerId] = (sellerEarnings[sellerId] || 0) + itemTotal;
+        // Tạo 1 đơn hàng riêng cho mỗi shop
+        for (const [sellerId, sellerItems] of Object.entries(itemsBySeller)) {
+            const orderRef = doc(collection(db, 'orders'));
+            const sellerTotal = sellerItems.reduce(
+                (sum, item) => sum + item.price * (item.cartQuantity || 1), 0
+            );
+
+            batch.set(orderRef, {
+                userId: currentUser?.uid,
+                customerName: fullName,
+                customerPhone: phone,
+                customerEmail: currentUser?.email || '',
+                address,
+                paymentMethod,
+                paymentStatus: status,
+                status: status === 'paid' ? 'ready_to_ship' : 'pending',
+                items: sellerItems,
+                sellerIds: [sellerId],
+                total: sellerTotal,
+                createdAt: serverTimestamp(),
             });
 
-            // Cập nhật pendingBalance cho từng shop
-            Object.keys(sellerEarnings).forEach(sellerId => {
+            // Nếu thanh toán thẻ → cộng tiền chờ cho shop đó
+            if (status === 'paid') {
                 const shopRef = doc(db, 'shopProfiles', sellerId);
                 batch.set(shopRef, {
-                    pendingBalance: increment(sellerEarnings[sellerId])
+                    pendingBalance: increment(sellerTotal)
                 }, { merge: true });
-            });
+            }
         }
 
         await batch.commit();
-
         if (!buyNowProduct) clearCart();
     };
 
@@ -108,7 +121,7 @@ export default function CheckoutScreen() {
                 // === COD: Lưu đơn trực tiếp ===
                 await saveOrderToFirestore('pending');
                 Alert.alert('Đặt hàng thành công! 🎉', 'Đơn hàng của bạn đã được đặt. Shop sẽ liên hệ sớm!', [
-                    { text: 'OK', onPress: () => navigation.navigate('Home' as never) }
+                    { text: 'OK', onPress: () => navigation.navigate('CustomerFlow') }
                 ]);
             } else {
                 // === CARD: Stripe Payment Sheet ===
@@ -147,7 +160,7 @@ export default function CheckoutScreen() {
                     // 4. Thanh toán thành công → lưu đơn hàng
                     await saveOrderToFirestore('paid');
                     Alert.alert('Thanh toán thành công! 🎉', 'Đơn hàng đã được xác nhận và sẽ được cẩn bị gần nhất!', [
-                        { text: 'OK', onPress: () => navigation.navigate('Home' as never) }
+                        { text: 'OK', onPress: () => navigation.navigate('CustomerFlow') }
                     ]);
                 }
             }
@@ -167,7 +180,22 @@ export default function CheckoutScreen() {
                 <Text style={styles.sellerName}>Shop: {item.sellerName || 'Cửa hàng mặc định'}</Text>
                 <View style={styles.priceRow}>
                     <Text style={styles.productPrice}>{item.price.toLocaleString('vi-VN')} đ</Text>
-                    <Text style={styles.productQty}>x {item.cartQuantity}</Text>
+                    
+                    <View style={styles.qtyControlCheckout}>
+                        <TouchableOpacity 
+                            style={styles.qtyBtnMini} 
+                            onPress={() => updateLocalQuantity(item.id, item.cartQuantity - 1)}
+                        >
+                            <Text style={styles.qtyBtnTextMini}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.qtyTextCheckout}>{item.cartQuantity}</Text>
+                        <TouchableOpacity 
+                            style={styles.qtyBtnMini} 
+                            onPress={() => updateLocalQuantity(item.id, item.cartQuantity + 1)}
+                        >
+                            <Text style={styles.qtyBtnTextMini}>+</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </View>
@@ -178,7 +206,7 @@ export default function CheckoutScreen() {
             {/* 1. Danh sách sản phẩm */}
             <Text style={styles.sectionTitle}>Sản phẩm đã chọn</Text>
             <View style={styles.productListContainer}>
-                {displayItems.map((item: any) => (
+                {localItems.map((item: any) => (
                     <View key={item.id}>
                         {renderItem({ item })}
                     </View>
@@ -264,7 +292,12 @@ const styles = StyleSheet.create({
     sellerName: { fontSize: 12, color: '#1976D2', fontStyle: 'italic', marginVertical: 3 },
     priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     productPrice: { color: '#D32F2F', fontWeight: 'bold' },
-    productQty: { color: '#666' },
+    
+    // Quantity Control Checkout
+    qtyControlCheckout: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 6, paddingHorizontal: 4 },
+    qtyBtnMini: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
+    qtyBtnTextMini: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+    qtyTextCheckout: { marginHorizontal: 10, fontSize: 14, fontWeight: 'bold', color: '#333' },
 
     // Form
     formContainer: { backgroundColor: '#fff', borderRadius: 10, padding: 15, elevation: 1 },

@@ -4,9 +4,9 @@ import {
     Alert, ActivityIndicator, Image, TextInput, ScrollView, Modal
 } from 'react-native';
 import { collection, query, where, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
-import { useAuth } from '../contexts/AuthContext';
-import { Product } from '../types';
+import { db } from '../../config/firebaseConfig';
+import { useAuth } from '../../contexts/AuthContext';
+import { Product } from '../../types';
 
 export default function SellerProductsScreen() {
     const { currentUser } = useAuth();

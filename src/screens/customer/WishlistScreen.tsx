@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { useWishlist } from '../contexts/WishlistContext';
+import { useWishlist } from '../../contexts/WishlistContext';
 import { useNavigation } from '@react-navigation/native';
-import { AppNavigationProp } from '../navigation/types';
+import { AppNavigationProp } from '../../navigation/types';
 
 export default function WishlistScreen() {
     const { wishlist, toggleWishlist } = useWishlist();
@@ -32,19 +32,19 @@ export default function WishlistScreen() {
                             <Text style={styles.name}>{item.name}</Text>
                             <Text style={styles.sellerName}>Shop: {item.sellerName || 'Cửa hàng mặc định'}</Text>
                             <Text style={styles.price}>{item.price.toLocaleString('vi-VN')} đ</Text>
-                            
+
                             <View style={styles.actionRow}>
                                 {item.quantity === 0 ? (
                                     <Text style={{ color: '#D32F2F', fontWeight: 'bold', marginRight: 15 }}>Hết hàng</Text>
                                 ) : (
-                                    <TouchableOpacity 
-                                        style={styles.buyNowBtn} 
+                                    <TouchableOpacity
+                                        style={styles.buyNowBtn}
                                         onPress={() => navigation.navigate('Checkout', { buyNowProduct: item })}
                                     >
                                         <Text style={styles.buyNowText}>Mua ngay</Text>
                                     </TouchableOpacity>
                                 )}
-                                
+
                                 <TouchableOpacity onPress={() => toggleWishlist(item)} style={styles.removeBtn}>
                                     <Text style={styles.removeText}>Bỏ tim</Text>
                                 </TouchableOpacity>

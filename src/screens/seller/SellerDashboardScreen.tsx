@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { collection, doc, updateDoc, query, where, onSnapshot, writeBatch, increment } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { db } from '../../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function SellerDashboardScreen() {
     const navigation = useNavigation();
@@ -154,8 +154,13 @@ export default function SellerDashboardScreen() {
                             </View>
 
                             <View style={styles.footerRow}>
-                                <Text style={styles.totalLabel}>Tổng tiền hàng:</Text>
-                                <Text style={styles.totalPrice}>{item.total?.toLocaleString('vi-VN')} đ</Text>
+                                <Text style={styles.totalLabel}>Tiền hàng của shop:</Text>
+                                <Text style={styles.totalPrice}>
+                                    {item.items
+                                        ?.filter((p: any) => p.sellerId === currentUser?.uid)
+                                        .reduce((sum: number, p: any) => sum + (p.price * (p.cartQuantity || p.quantity || 1)), 0)
+                                        .toLocaleString('vi-VN')} đ
+                                </Text>
                             </View>
 
                             {/* Nút hành động */}

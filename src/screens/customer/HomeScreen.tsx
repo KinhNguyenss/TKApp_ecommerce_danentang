@@ -5,9 +5,9 @@ import {
     Alert, ActivityIndicator, TextInput, ScrollView
 } from 'react-native';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
-import { useCart } from '../contexts/CartContext';
-import { Product } from '../types';
+import { db } from '../../config/firebaseConfig';
+import { useCart } from '../../contexts/CartContext';
+import { Product } from '../../types';
 import { useNavigation } from '@react-navigation/native';
 
 const ALL_CATEGORY = 'Tất cả';
@@ -130,7 +130,7 @@ export default function HomeScreen() {
                         activeOpacity={0.8}
                     >
                         <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/200' }} style={styles.image} />
-                        
+
                         {item.quantity === 0 && (
                             <View style={styles.outOfStockOverlay}>
                                 <Text style={styles.outOfStockLabel}>Hết hàng</Text>

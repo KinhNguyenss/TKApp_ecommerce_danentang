@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
-import { useAuth } from '../contexts/AuthContext';
+import { collection, query, where, getDocs, onSnapshot, doc, writeBatch, increment } from 'firebase/firestore';
+import { db } from '../../config/firebaseConfig';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { AppNavigationProp } from '../navigation/types';
+import { AppNavigationProp } from '../../navigation/types';
 
 export default function OrderHistoryScreen() {
     const { currentUser } = useAuth();
@@ -14,35 +14,33 @@ export default function OrderHistoryScreen() {
     const navigation = useNavigation<AppNavigationProp>();
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            if (!currentUser) return;
+        if (!currentUser) return;
 
-            try {
-                // 1. Chỉ truy vấn đơn hàng của Riêng user này
-                const q = query(
-                    collection(db, 'orders'),
-                    where('userId', '==', currentUser.uid)
-                );
+        // Lắng nghe real-time: tự động cập nhật khi seller đổi trạng thái đơn
+        const q = query(
+            collection(db, 'orders'),
+            where('userId', '==', currentUser.uid)
+        );
 
-                const querySnapshot = await getDocs(q);
-                const fetchedOrders = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const fetchedOrders = querySnapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            fetchedOrders.sort((a: any, b: any) => {
+                const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tB - tA;
+            });
+            setOrders(fetchedOrders);
+            setLoading(false);
+        }, (error) => {
+            console.error('Lỗi lắng nghe đơn hàng:', error);
+            setLoading(false);
+        });
 
-                // 2. Sắp xếp đơn mới nhất lên đầu (Dùng code JS để tránh lỗi index của Firebase)
-                fetchedOrders.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
-                setOrders(fetchedOrders);
-
-            } catch (error) {
-                console.error("Lỗi lấy đơn hàng:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchOrders();
-    }, []);
+        return () => unsubscribe();
+    }, [currentUser]);
 
     // Lấy danh sách đơn đã được đánh giá
     useEffect(() => {
@@ -69,15 +67,91 @@ export default function OrderHistoryScreen() {
 
     // Hàm phụ trợ dịch trạng thái sang tiếng Việt
     const getStatusText = (status: string) => {
-        if (status === 'delivered') return 'Đã giao hàng';
+        if (status === 'delivered') return 'Shipper đã giao';
+        if (status === 'cod_pending_reconcile') return 'Chờ đối soát COD';
+        if (status === 'completed') return 'Đã hoàn tất';
         if (status === 'canceled') return 'Đã hủy';
-        return 'Đang xử lý'; // Mặc định là pending
+        if (status === 'ready_to_ship') return 'Đang chuẩn bị';
+        if (status === 'shipping') return 'Đang giao hàng';
+        return 'Đang xử lý';
     };
 
     const getStatusColor = (status: string) => {
-        if (status === 'delivered') return '#388E3C'; // Xanh lá
-        if (status === 'canceled') return '#D32F2F';  // Đỏ
-        return '#FFA000'; // Vàng cam cho Đang xử lý
+        if (status === 'completed') return '#388E3C';
+        if (status === 'delivered') return '#1976D2';
+        if (status === 'cod_pending_reconcile') return '#F57C00';
+        if (status === 'canceled') return '#D32F2F';
+        if (status === 'shipping') return '#8E24AA';
+        return '#FFA000';
+    };
+
+    // Khi khách bấm "Xác nhận đã nhận hàng"
+    const handleConfirmReceived = (order: any) => {
+        const isCOD = order.paymentMethod === 'cod';
+        Alert.alert(
+            '\ud83d\udce6 Xác nhận nhận hàng',
+            isCOD
+                ? 'Bạn đã nhận được hàng và trả tiền cho Shipper rồi?\n\nHe ́ thóng sẽ chuyển sang chờ Admin đối soát trước khi giải ngân cho Seller.'
+                : 'Xác nhận bạn đã nhận được hàng?\n\nTiền sẽ được giải ngân ngay cho Seller.',
+            [
+                { text: 'Chưa', style: 'cancel' },
+                {
+                    text: 'Xác nhận',
+                    onPress: () => confirmReceived(order, isCOD)
+                }
+            ]
+        );
+    };
+
+    const confirmReceived = async (order: any, isCOD: boolean) => {
+        try {
+            const batch = writeBatch(db);
+            const orderRef = doc(db, 'orders', order.id);
+
+            if (isCOD) {
+                // COD: Chỉ đổi status, chờ Admin đối soát
+                batch.update(orderRef, { status: 'cod_pending_reconcile' });
+            } else {
+                // Card/Stripe: Giải ngân ngay cho Seller
+                batch.update(orderRef, { status: 'completed' });
+
+                // Tính tiền cho từng Seller
+                const sellerEarnings: { [key: string]: number } = {};
+                if (order.items && order.items.length > 0) {
+                    order.items.forEach((item: any) => {
+                        const sellerId = item.sellerId || 'default_seller';
+                        const itemTotal = (item.price || 0) * (item.cartQuantity || item.quantity || 1);
+                        sellerEarnings[sellerId] = (sellerEarnings[sellerId] || 0) + itemTotal;
+                    });
+                }
+
+                // Trừ frozenBalance (pendingBalance), cộng availableBalance
+                Object.keys(sellerEarnings).forEach(sellerId => {
+                    const shopRef = doc(db, 'shopProfiles', sellerId);
+                    batch.set(shopRef, {
+                        pendingBalance: increment(-sellerEarnings[sellerId]),
+                        availableBalance: increment(sellerEarnings[sellerId]),
+                    }, { merge: true });
+                });
+            }
+
+            await batch.commit();
+            Alert.alert(
+                'Thành công! \ud83c\udf89',
+                isCOD
+                    ? 'Đơn hàng đang chờ Admin đối soát COD.'
+                    : 'Tiền đã được giải ngân cho Shop!'
+            );
+            // Reload orders
+            setOrders(prev => prev.map(o =>
+                o.id === order.id
+                    ? { ...o, status: isCOD ? 'cod_pending_reconcile' : 'completed' }
+                    : o
+            ));
+        } catch (error) {
+            console.error('Lỗi xác nhận:', error);
+            Alert.alert('Lỗi', 'Không thể xác nhận. Vui lòng thử lại.');
+        }
     };
 
     if (loading) return <ActivityIndicator style={{ flex: 1, marginTop: 50 }} size="large" color="#FF6F00" />;
@@ -104,7 +178,7 @@ export default function OrderHistoryScreen() {
                             <Text style={styles.date}>
                                 Ngày đặt: {item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString('vi-VN') : 'Mới đây'}
                             </Text>
-                            
+
                             <View style={styles.productsContainer}>
                                 {item.items && item.items.map((prod: any, index: number) => (
                                     <View key={index} style={styles.productItem}>
@@ -122,14 +196,38 @@ export default function OrderHistoryScreen() {
                                 <Text style={styles.totalPrice}>{item.total?.toLocaleString('vi-VN')} đ</Text>
                             </View>
 
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
-                                <TouchableOpacity 
-                                    style={[styles.chatBtn, { flex: 1, marginTop: 0, marginRight: 5 }]} 
+                            <View style={{ marginTop: 12 }}>
+                                {/* Nút xác nhận nhận hàng - chỉ khi Shipper đã báo giao */}
+                                {item.status === 'delivered' && (
+                                    <TouchableOpacity
+                                        style={styles.confirmBtn}
+                                        onPress={() => handleConfirmReceived(item)}
+                                    >
+                                        <Text style={styles.confirmBtnText}>
+                                            {item.paymentMethod === 'cod'
+                                                ? '💵 Đã nhận hàng & Trả tiền Shipper'
+                                                : '✅ Xác nhận đã nhận hàng'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {/* Badge chờ đối soát */}
+                                {item.status === 'cod_pending_reconcile' && (
+                                    <View style={styles.pendingBadge}>
+                                        <Text style={styles.pendingBadgeText}>
+                                            ⏳ Đang chờ Admin đối soát COD...
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+                                <TouchableOpacity
+                                    style={[styles.chatBtn, { flex: 1, marginTop: 0, marginRight: 5 }]}
                                     onPress={() => {
                                         const sellerId = item.items && item.items.length > 0 ? item.items[0].sellerId : null;
                                         if (!sellerId) return Alert.alert('Lỗi', 'Không tìm thấy thông tin Shop của đơn hàng này.');
                                         const msg = `Tôi cần hỗ trợ đơn hàng mã #${item.id.substring(0, 6).toUpperCase()}`;
-                                        // Mở màn hình Chat
                                         (navigation.navigate as any)('Chat', { sellerId: sellerId, initialMessage: msg });
                                     }}
                                 >
@@ -137,11 +235,11 @@ export default function OrderHistoryScreen() {
                                 </TouchableOpacity>
 
                                 {(item.status === 'delivered' || item.status === 'completed') && (
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         style={[
                                             styles.reviewBtn, { flex: 1, marginLeft: 5 },
                                             reviewedOrderIds.has(item.id) && styles.reviewBtnDone
-                                        ]} 
+                                        ]}
                                         onPress={() => {
                                             if (item.items && item.items.length > 0) {
                                                 (navigation.navigate as any)('Review', {
@@ -196,4 +294,14 @@ const styles = StyleSheet.create({
     reviewBtnText: { color: '#F57C00', fontSize: 14, fontWeight: 'bold' },
     reviewBtnDone: { backgroundColor: '#E8F5E9' },
     reviewBtnTextDone: { color: '#2E7D32' },
+    confirmBtn: {
+        backgroundColor: '#1565C0', padding: 14, borderRadius: 8,
+        alignItems: 'center', marginBottom: 8
+    },
+    confirmBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+    pendingBadge: {
+        backgroundColor: '#FFF8E1', padding: 10, borderRadius: 8,
+        alignItems: 'center', borderWidth: 1, borderColor: '#FFE082', marginBottom: 8
+    },
+    pendingBadgeText: { color: '#F57F17', fontSize: 13, fontWeight: '600' },
 });

@@ -1,7 +1,7 @@
 // src/screens/CartScreen.tsx
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '../../contexts/CartContext';
 import { useNavigation } from '@react-navigation/native'; // <-- IMPORT HOOK NÀY
 
 export default function CartScreen() {
@@ -30,19 +30,19 @@ export default function CartScreen() {
                             <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
                             <Text style={styles.sellerName}>Shop: {item.sellerName || 'Cửa hàng mặc định'}</Text>
                             <Text style={styles.itemPrice}>{item.price.toLocaleString('vi-VN')} đ</Text>
-                            
+
                             {item.quantity === 0 ? (
                                 <Text style={{ color: '#D32F2F', fontWeight: 'bold', marginTop: 10 }}>⚠️ Hết hàng</Text>
                             ) : (
                                 <View style={styles.quantityControl}>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         style={styles.qtyBtn}
                                         onPress={() => updateQuantity(item.id, item.cartQuantity - 1)}
                                     >
                                         <Text style={styles.qtyBtnText}>-</Text>
                                     </TouchableOpacity>
                                     <Text style={styles.qtyText}>{item.cartQuantity}</Text>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         style={styles.qtyBtn}
                                         onPress={() => updateQuantity(item.id, item.cartQuantity + 1)}
                                     >

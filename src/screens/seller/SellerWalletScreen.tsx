@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
-import { db } from '../config/firebaseConfig';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { useAuth } from '../contexts/AuthContext';
+import { db } from '../../config/firebaseConfig';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function SellerWalletScreen() {
     const { currentUser } = useAuth();
@@ -40,7 +40,26 @@ export default function SellerWalletScreen() {
             `Bạn muốn rút ${balance.available.toLocaleString('vi-VN')} đ về tài khoản ngân hàng đã liên kết?`,
             [
                 { text: 'Hủy', style: 'cancel' },
-                { text: 'Xác nhận', onPress: () => Alert.alert('Thành công', 'Yêu cầu rút tiền của bạn đã được gửi và đang được xử lý.') }
+                {
+                    text: 'Xác nhận',
+                    onPress: async () => {
+                        try {
+                            if (!currentUser) return;
+                            const shopRef = doc(db, 'shopProfiles', currentUser.uid);
+                            await updateDoc(shopRef, {
+                                payoutRequested: true,
+                                payoutAmount: balance.available,
+                                payoutRequestedAt: serverTimestamp(),
+                            });
+                            Alert.alert(
+                                'Gửi thành công! 🎉',
+                                'Yêu cầu rút tiền đã được gửi cho Admin. Bạn sẽ nhận được tiền trong vòng 1-2 ngày làm việc.'
+                            );
+                        } catch (e) {
+                            Alert.alert('Lỗi', 'Không thể gửi yêu cầu. Vui lòng thử lại.');
+                        }
+                    }
+                }
             ]
         );
     };
@@ -60,7 +79,7 @@ export default function SellerWalletScreen() {
                     <Text style={styles.balanceLabel}>Số dư khả dụng</Text>
                     <Text style={styles.availableAmount}>{balance.available.toLocaleString('vi-VN')} đ</Text>
                 </View>
-                
+
                 <View style={styles.divider} />
 
                 <View style={styles.balanceItem}>
