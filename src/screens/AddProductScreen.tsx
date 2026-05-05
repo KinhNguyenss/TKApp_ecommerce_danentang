@@ -18,6 +18,8 @@ export default function AddProductScreen() {
     const [quantity, setQuantity] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('');
+    const [tags, setTags] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -146,6 +148,8 @@ export default function AddProductScreen() {
                 quantity: Number(quantity),
                 imageUrl: imageUrl || 'https://via.placeholder.com/300', // Tạm dùng ảnh ảo nếu không nhập link
                 description,
+                category,
+                tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag !== ''),
                 sellerId: currentUser?.uid,
                 sellerName: currentUser?.hoTen,
                 createdAt: serverTimestamp(),
@@ -154,6 +158,7 @@ export default function AddProductScreen() {
             Alert.alert("Thành công", "Sản phẩm đã được lên kệ!");
             // Reset form
             setName(''); setPrice(''); setQuantity(''); setImageUrl(''); setDescription('');
+            setCategory(''); setTags('');
         } catch (error) {
             Alert.alert("Lỗi", "Không thể đăng sản phẩm.");
             console.error(error);
@@ -199,6 +204,18 @@ export default function AddProductScreen() {
 
                 <Text style={styles.label}>Mô tả sản phẩm</Text>
                 <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline numberOfLines={4} placeholder="Nhập mô tả chi tiết..." />
+
+                <View style={styles.row}>
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                        <Text style={styles.label}>Danh mục</Text>
+                        <TextInput style={styles.input} value={category} onChangeText={setCategory} placeholder="VD: Đồ gốm, Quần áo" />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.label}>Thẻ (Tags)</Text>
+                        <TextInput style={styles.input} value={tags} onChangeText={setTags} placeholder="VD: quà tặng, handmade" />
+                    </View>
+                </View>
+                <Text style={{ fontSize: 11, color: '#888', marginTop: -10 }}>* Các thẻ cách nhau bằng dấu phẩy</Text>
             </View>
 
             <TouchableOpacity style={styles.btn} onPress={handlePublish} disabled={isUploading}>

@@ -1,40 +1,49 @@
 // src/screens/SellerDashboardScreen.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { collection, getDocs, doc, updateDoc, query, writeBatch, increment } from 'firebase/firestore';
+import { collection, doc, updateDoc, query, where, onSnapshot, writeBatch, increment } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SellerDashboardScreen() {
     const navigation = useNavigation();
+    const { currentUser } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchOrders = async () => {
-        try {
-            // Lấy tất cả đơn hàng, sắp xếp mới nhất lên đầu
-            const q = query(collection(db, 'orders'));
-            const querySnapshot = await getDocs(q);
+    useEffect(() => {
+        if (!currentUser) return;
+
+        // ✅ LẮNG NGHE REAL-TIME: Chỉ lấy đơn hàng có chứa sản phẩm của Shop này
+        const q = query(
+            collection(db, 'orders'),
+            where('sellerIds', 'array-contains', currentUser.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const fetchedOrders = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
 
-            // Sắp xếp bằng JS (tránh lỗi require index của Firebase)
-            fetchedOrders.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+            // Sắp xếp đơn mới nhất lên đầu
+            fetchedOrders.sort((a: any, b: any) => {
+                const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return timeB - timeA;
+            });
+
             setOrders(fetchedOrders);
-        } catch (error) {
-            console.error("Lỗi lấy đơn hàng:", error);
-        } finally {
             setLoading(false);
-        }
-    };
+        }, (error) => {
+            console.error("Lỗi lắng nghe đơn hàng:", error);
+            setLoading(false);
+        });
 
-    useEffect(() => {
-        fetchOrders();
-    }, []);
+        return () => unsubscribe(); // Hủy lắng nghe khi thoát màn hình
+    }, [currentUser]);
 
-    // Hàm chuyển đổi trạng thái đơn hàng (Mô phỏng Giai đoạn 3 & 4)
     const updateOrderStatus = async (order: any, currentStatus: string) => {
         let nextStatus = '';
         let statusMessage = '';
@@ -54,19 +63,20 @@ export default function SellerDashboardScreen() {
 
         try {
             const orderRef = doc(db, 'orders', order.id);
-            
+
             if (nextStatus === 'delivered') {
-                // Trừ số lượng tồn kho của các sản phẩm trong đơn hàng bằng writeBatch
                 const batch = writeBatch(db);
                 batch.update(orderRef, { status: nextStatus });
 
+                // Cập nhật số lượng đã bán và tồn kho
                 if (order.items && order.items.length > 0) {
                     for (const prod of order.items) {
-                        if (prod.id) {
+                        if (prod.id && prod.sellerId === currentUser?.uid) {
                             const productRef = doc(db, 'products', prod.id);
-                            const deductAmount = prod.cartQuantity || prod.quantity || 1;
+                            const amount = prod.cartQuantity || prod.quantity || 1;
                             batch.update(productRef, {
-                                quantity: increment(-deductAmount)
+                                quantity: increment(-amount),
+                                soldCount: increment(amount) // Lưu thêm số lượng đã bán
                             });
                         }
                     }
@@ -75,9 +85,7 @@ export default function SellerDashboardScreen() {
             } else {
                 await updateDoc(orderRef, { status: nextStatus });
             }
-
             Alert.alert('Thành công', statusMessage);
-            fetchOrders(); // Tải lại danh sách
         } catch (error) {
             console.error("Lỗi cập nhật:", error);
             Alert.alert('Lỗi', 'Không thể cập nhật trạng thái.');
@@ -86,116 +94,119 @@ export default function SellerDashboardScreen() {
 
     const getStatusText = (status: string) => {
         switch (status) {
-            case 'pending': return 'Chờ xử lý';
-            case 'ready_to_ship': return 'Đang chuẩn bị hàng';
-            case 'shipping': return 'Đang giao (Shipping)';
-            case 'delivered': return 'Đã giao (Delivered)';
-            case 'canceled': return 'Đã hủy';
+            case 'pending': return '⏳ Chờ xử lý';
+            case 'ready_to_ship': return '📦 Đang chuẩn bị';
+            case 'shipping': return '🚚 Đang giao';
+            case 'delivered': return '✅ Hoàn tất';
+            case 'canceled': return '❌ Đã hủy';
             default: return status;
         }
     };
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'pending': return '#FFA000'; // Vàng
-            case 'ready_to_ship': return '#1976D2'; // Xanh dương
-            case 'shipping': return '#8E24AA'; // Tím
-            case 'delivered': return '#388E3C'; // Xanh lá
-            case 'canceled': return '#D32F2F'; // Đỏ
+            case 'pending': return '#FFA000';
+            case 'ready_to_ship': return '#1976D2';
+            case 'shipping': return '#8E24AA';
+            case 'delivered': return '#388E3C';
+            case 'canceled': return '#D32F2F';
             default: return '#000';
         }
     };
 
-    const getNextStatusColor = (currentStatus: string) => {
-        switch (currentStatus) {
-            case 'pending': return getStatusColor('ready_to_ship');
-            case 'ready_to_ship': return getStatusColor('shipping');
-            case 'shipping': return getStatusColor('delivered');
-            default: return getStatusColor(currentStatus);
-        }
-    };
-
-    const getNextActionText = (status: string) => {
-        switch (status) {
-            case 'pending': return 'Chuyển sang: Đang chuẩn bị hàng ❯';
-            case 'ready_to_ship': return 'Chuyển sang: Đang giao hàng ❯';
-            case 'shipping': return 'Chuyển sang: Đã giao thành công ❯';
-            default: return 'Cập nhật trạng thái ❯';
-        }
-    };
-
-    if (loading) return <ActivityIndicator style={{ flex: 1, marginTop: 50 }} size="large" color="#2E7D32" />;
+    if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color="#2E7D32" />;
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Quản lý Đơn hàng</Text>
+            <Text style={styles.title}>Đơn Hàng Của Shop 📦</Text>
 
-            <FlatList
-                data={orders}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.card}>
-                        <View style={styles.headerRow}>
-                            <Text style={styles.orderId}>#{item.id.substring(0, 8).toUpperCase()}</Text>
-                            <View style={[styles.badge, { backgroundColor: getStatusColor(item.status) }]}>
-                                <Text style={styles.badgeText}>{getStatusText(item.status)}</Text>
+            {orders.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>Chưa có đơn hàng nào cho sản phẩm của bạn.</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={orders}
+                    keyExtractor={item => item.id}
+                    showsVerticalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                        <View style={styles.card}>
+                            <View style={styles.headerRow}>
+                                <Text style={styles.orderId}>Mã: #{item.id.substring(0, 8).toUpperCase()}</Text>
+                                <View style={[styles.badge, { backgroundColor: getStatusColor(item.status) }]}>
+                                    <Text style={styles.badgeText}>{getStatusText(item.status)}</Text>
+                                </View>
                             </View>
-                        </View>
 
-                        <Text style={styles.info}>Khách hàng: {item.customerEmail || 'Khách'}</Text>
-                        <Text style={styles.info}>Tổng tiền: {item.total?.toLocaleString('vi-VN')} đ</Text>
-                        <Text style={styles.info}>Ngày đặt: {item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString('vi-VN') : ''}</Text>
+                            <View style={styles.customerBox}>
+                                <Text style={styles.info}>👤 Khách: <Text style={{ fontWeight: '600' }}>{item.customerName || 'N/A'}</Text></Text>
+                                <Text style={styles.info}>📞 SĐT: {item.customerPhone || 'N/A'}</Text>
+                                <Text style={styles.info}>📍 Đ/C: {item.address || 'N/A'}</Text>
+                            </View>
 
-                        <View style={styles.productsContainer}>
-                            <Text style={styles.productsTitle}>Sản phẩm:</Text>
-                            {item.items && item.items.map((prod: any, index: number) => (
-                                <Text key={index} style={styles.productItem}>
-                                    - {prod.name} (SL: {prod.cartQuantity || prod.quantity || 1})
-                                </Text>
-                            ))}
-                        </View>
+                            <View style={styles.productsContainer}>
+                                {item.items && item.items.filter((p: any) => p.sellerId === currentUser?.uid).map((prod: any, index: number) => (
+                                    <View key={index} style={styles.productRow}>
+                                        <Text style={styles.productName}>• {prod.name}</Text>
+                                        <Text style={styles.productQty}>x{prod.cartQuantity || prod.quantity || 1}</Text>
+                                    </View>
+                                ))}
+                            </View>
 
-                        {/* Nút cập nhật trạng thái chỉ hiện khi đơn chưa hoàn tất */}
-                        {item.status !== 'delivered' && item.status !== 'canceled' && (
+                            <View style={styles.footerRow}>
+                                <Text style={styles.totalLabel}>Tổng tiền hàng:</Text>
+                                <Text style={styles.totalPrice}>{item.total?.toLocaleString('vi-VN')} đ</Text>
+                            </View>
+
+                            {/* Nút hành động */}
+                            {item.status !== 'delivered' && item.status !== 'canceled' && (
+                                <TouchableOpacity
+                                    style={[styles.btnAction, { backgroundColor: '#2E7D32' }]}
+                                    onPress={() => updateOrderStatus(item, item.status)}
+                                >
+                                    <Text style={styles.btnText}>
+                                        {item.status === 'pending' ? 'Bắt đầu chuẩn bị hàng ❯' :
+                                            item.status === 'ready_to_ship' ? 'Giao cho đơn vị vận chuyển ❯' :
+                                                'Xác nhận đã giao thành công ❯'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
                             <TouchableOpacity
-                                style={[styles.btnAction, { backgroundColor: getNextStatusColor(item.status) }]}
-                                onPress={() => updateOrderStatus(item, item.status)}
+                                style={styles.chatBtn}
+                                onPress={() => (navigation.navigate as any)('Chat', { customerId: item.userId })}
                             >
-                                <Text style={styles.btnText}>{getNextActionText(item.status)}</Text>
+                                <Text style={styles.chatBtnText}>💬 Nhắn tin cho khách</Text>
                             </TouchableOpacity>
-                        )}
-                        
-                        <TouchableOpacity
-                            style={styles.chatBtn}
-                            onPress={() => {
-                                if (!item.userId) return Alert.alert('Lỗi', 'Không tìm thấy thông tin khách hàng.');
-                                // Seller click nên truyền customerId
-                                (navigation.navigate as any)('Chat', { customerId: item.userId });
-                            }}
-                        >
-                            <Text style={styles.chatBtnText}>💬 Nhắn tin cho Khách</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            />
+                        </View>
+                    )}
+                />
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 15, backgroundColor: '#f0f4f8' },
-    title: { fontSize: 22, fontWeight: 'bold', color: '#2E7D32', marginBottom: 15 },
-    card: { backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 15, elevation: 2 },
-    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    orderId: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-    badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
-    badgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    info: { fontSize: 14, color: '#555', marginBottom: 5 },
-    productsContainer: { marginTop: 10, padding: 10, backgroundColor: '#f9f9f9', borderRadius: 8 },
-    productsTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5 },
-    productItem: { fontSize: 14, color: '#555', marginLeft: 5, marginBottom: 2 },
-    btnAction: { padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
-    btnText: { color: '#fff', fontWeight: 'bold' },
-    chatBtn: { backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+    container: { flex: 1, padding: 16, backgroundColor: '#F3F4F6' },
+    title: { fontSize: 22, fontWeight: 'bold', color: '#2E7D32', marginBottom: 16 },
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    emptyText: { color: '#9CA3AF', fontSize: 16 },
+    card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 16, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    orderId: { fontSize: 15, fontWeight: 'bold', color: '#374151' },
+    badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+    badgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+    customerBox: { backgroundColor: '#F9FAFB', padding: 10, borderRadius: 8, marginBottom: 12 },
+    info: { fontSize: 13, color: '#4B5563', marginBottom: 4 },
+    productsContainer: { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 10, marginBottom: 12 },
+    productRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    productName: { fontSize: 14, color: '#374151', flex: 1 },
+    productQty: { fontSize: 14, fontWeight: 'bold', color: '#111827' },
+    footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+    totalLabel: { fontSize: 14, color: '#6B7280' },
+    totalPrice: { fontSize: 16, fontWeight: 'bold', color: '#D32F2F' },
+    btnAction: { padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 8 },
+    btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+    chatBtn: { backgroundColor: '#E8F5E9', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 10 },
     chatBtnText: { color: '#2E7D32', fontSize: 14, fontWeight: 'bold' }
 });

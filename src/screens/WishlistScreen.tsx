@@ -24,7 +24,7 @@ export default function WishlistScreen() {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <TouchableOpacity
-                        style={styles.card}
+                        style={[styles.card, item.quantity === 0 && { opacity: 0.6 }]}
                         onPress={() => navigation.navigate('ProductDetail', { product: item })}
                     >
                         <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/150' }} style={styles.image} />
@@ -34,12 +34,16 @@ export default function WishlistScreen() {
                             <Text style={styles.price}>{item.price.toLocaleString('vi-VN')} đ</Text>
                             
                             <View style={styles.actionRow}>
-                                <TouchableOpacity 
-                                    style={styles.buyNowBtn} 
-                                    onPress={() => navigation.navigate('Checkout', { buyNowProduct: item })}
-                                >
-                                    <Text style={styles.buyNowText}>Mua ngay</Text>
-                                </TouchableOpacity>
+                                {item.quantity === 0 ? (
+                                    <Text style={{ color: '#D32F2F', fontWeight: 'bold', marginRight: 15 }}>Hết hàng</Text>
+                                ) : (
+                                    <TouchableOpacity 
+                                        style={styles.buyNowBtn} 
+                                        onPress={() => navigation.navigate('Checkout', { buyNowProduct: item })}
+                                    >
+                                        <Text style={styles.buyNowText}>Mua ngay</Text>
+                                    </TouchableOpacity>
+                                )}
                                 
                                 <TouchableOpacity onPress={() => toggleWishlist(item)} style={styles.removeBtn}>
                                     <Text style={styles.removeText}>Bỏ tim</Text>

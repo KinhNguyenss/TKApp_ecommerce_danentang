@@ -24,28 +24,32 @@ export default function CartScreen() {
                 data={cartItems}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View style={styles.cartItem}>
+                    <View style={[styles.cartItem, item.quantity === 0 && { opacity: 0.5 }]}>
                         <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/80' }} style={styles.itemImage} />
                         <View style={styles.itemInfo}>
                             <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
                             <Text style={styles.sellerName}>Shop: {item.sellerName || 'Cửa hàng mặc định'}</Text>
                             <Text style={styles.itemPrice}>{item.price.toLocaleString('vi-VN')} đ</Text>
                             
-                            <View style={styles.quantityControl}>
-                                <TouchableOpacity 
-                                    style={styles.qtyBtn}
-                                    onPress={() => updateQuantity(item.id, item.cartQuantity - 1)}
-                                >
-                                    <Text style={styles.qtyBtnText}>-</Text>
-                                </TouchableOpacity>
-                                <Text style={styles.qtyText}>{item.cartQuantity}</Text>
-                                <TouchableOpacity 
-                                    style={styles.qtyBtn}
-                                    onPress={() => updateQuantity(item.id, item.cartQuantity + 1)}
-                                >
-                                    <Text style={styles.qtyBtnText}>+</Text>
-                                </TouchableOpacity>
-                            </View>
+                            {item.quantity === 0 ? (
+                                <Text style={{ color: '#D32F2F', fontWeight: 'bold', marginTop: 10 }}>⚠️ Hết hàng</Text>
+                            ) : (
+                                <View style={styles.quantityControl}>
+                                    <TouchableOpacity 
+                                        style={styles.qtyBtn}
+                                        onPress={() => updateQuantity(item.id, item.cartQuantity - 1)}
+                                    >
+                                        <Text style={styles.qtyBtnText}>-</Text>
+                                    </TouchableOpacity>
+                                    <Text style={styles.qtyText}>{item.cartQuantity}</Text>
+                                    <TouchableOpacity 
+                                        style={styles.qtyBtn}
+                                        onPress={() => updateQuantity(item.id, item.cartQuantity + 1)}
+                                    >
+                                        <Text style={styles.qtyBtnText}>+</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
                         <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.removeBtn}>
                             <Text style={styles.removeText}>✕</Text>

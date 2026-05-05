@@ -1,5 +1,7 @@
 // src/navigation/AppNavigator.tsx
 import React from 'react';
+import { Text } from 'react-native';
+
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,10 +22,12 @@ import CartScreen from '../screens/CartScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 
-// Import Screens Doanh nghiệp (Ta sẽ tạo sau)
+// Import Screens Doanh nghiệp
 import AddProductScreen from '../screens/AddProductScreen';
 import SellerDashboardScreen from '../screens/SellerDashboardScreen';
-// import SellerDashboardScreen from '../screens/SellerDashboardScreen'; 
+import SellerProductsScreen from '../screens/SellerProductsScreen';
+import SellerProfileScreen from '../screens/SellerProfileScreen';
+import SellerWalletScreen from '../screens/SellerWalletScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,11 +35,18 @@ const Tab = createBottomTabNavigator();
 // --- LUỒNG DÀNH CHO KHÁCH HÀNG ---
 function CustomerTabs() {
     return (
-        <Tab.Navigator screenOptions={{ tabBarActiveTintColor: '#FF6F00', headerStyle: { backgroundColor: '#FF6F00' }, headerTintColor: '#fff' }}>
-            <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Khám phá' }} />
-            <Tab.Screen name="Cart" component={CartScreen} options={{ title: 'Giỏ hàng' }} />
-            <Tab.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Tin nhắn' }} />
-            <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Cá nhân' }} />
+        <Tab.Navigator screenOptions={{
+            tabBarActiveTintColor: '#FF6F00',
+            tabBarInactiveTintColor: '#9CA3AF',
+            headerStyle: { backgroundColor: '#FF6F00' },
+            headerTintColor: '#fff',
+            tabBarStyle: { height: 60, paddingBottom: 8 },
+            tabBarLabelStyle: { fontSize: 11 }
+        }}>
+            <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Khám phá', tabBarIcon: () => <Text style={{ fontSize: 20 }}>🏠</Text> }} />
+            <Tab.Screen name="Cart" component={CartScreen} options={{ title: 'Giỏ hàng', tabBarIcon: () => <Text style={{ fontSize: 20 }}>🛒</Text> }} />
+            <Tab.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Tin nhắn', tabBarIcon: () => <Text style={{ fontSize: 20 }}>💬</Text> }} />
+            <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Cá nhân', tabBarIcon: () => <Text style={{ fontSize: 20 }}>👤</Text> }} />
         </Tab.Navigator>
     );
 }
@@ -51,33 +62,43 @@ function CustomerStack() {
 // --- LUỒNG DÀNH CHO DOANH NGHIỆP ---
 function SellerTabs() {
     return (
-        <Tab.Navigator screenOptions={{ tabBarActiveTintColor: '#2E7D32', headerStyle: { backgroundColor: '#2E7D32' }, headerTintColor: '#fff' }}>
-            {/* Tab 1: Quản lý đơn hàng */}
+        <Tab.Navigator screenOptions={{
+            tabBarActiveTintColor: '#2E7D32',
+            tabBarInactiveTintColor: '#9CA3AF',
+            headerStyle: { backgroundColor: '#2E7D32' },
+            headerTintColor: '#fff',
+            tabBarStyle: { height: 60, paddingBottom: 8 },
+            tabBarLabelStyle: { fontSize: 11 }
+        }}>
             <Tab.Screen
                 name="Dashboard"
                 component={SellerDashboardScreen}
-                options={{ title: 'Đơn Hàng' }}
+                options={{ title: 'Đơn Hàng', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>📦</Text> }}
             />
-
-            {/* Tab 2: Đăng sản phẩm mới */}
+            <Tab.Screen
+                name="SellerProducts"
+                component={SellerProductsScreen}
+                options={{ title: 'Sản Phẩm', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>🎪</Text> }}
+            />
             <Tab.Screen
                 name="AddProduct"
                 component={AddProductScreen}
-                options={{ title: 'Lên Kệ' }}
+                options={{ title: 'Thêm Hàng', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>➕</Text> }}
             />
-
-            {/* Tab 3: Tin nhắn */}
             <Tab.Screen
                 name="ChatList"
                 component={ChatListScreen}
-                options={{ title: 'Tin nhắn' }}
+                options={{ title: 'Tin nhắn', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>💬</Text> }}
             />
-
-            {/* Tab 4: Hồ sơ / Đăng xuất */}
             <Tab.Screen
-                name="Profile"
-                component={ProfileScreen}
-                options={{ title: 'Cửa hàng' }}
+                name="SellerWallet"
+                component={SellerWalletScreen}
+                options={{ title: 'Ví Tiền', tabBarIcon: () => <Text style={{ fontSize: 20 }}>💰</Text> }}
+            />
+            <Tab.Screen
+                name="SellerProfile"
+                component={SellerProfileScreen}
+                options={{ title: 'Hồ Sơ Shop', tabBarIcon: () => <Text style={{ fontSize: 20 }}>🏪</Text> }}
             />
         </Tab.Navigator>
     );

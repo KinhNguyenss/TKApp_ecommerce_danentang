@@ -1,7 +1,7 @@
 import { User } from 'firebase/auth';
 
 export interface AppUser extends User {
-  role?: 'customer' | 'business';
+  role?: 'customer' | 'business' | 'admin';
   hoTen?: string;
 }
 
@@ -15,6 +15,7 @@ export interface Product {
   quantity?: number; // Số lượng tồn kho
   sellerId?: string;
   sellerName?: string;
+  tags?: string[];
 }
 
 export interface CartItem extends Product {

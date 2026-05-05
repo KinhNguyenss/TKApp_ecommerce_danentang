@@ -10,6 +10,7 @@ export default function OrderHistoryScreen() {
     const { currentUser } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(new Set());
     const navigation = useNavigation<AppNavigationProp>();
 
     useEffect(() => {
@@ -42,6 +43,29 @@ export default function OrderHistoryScreen() {
 
         fetchOrders();
     }, []);
+
+    // Lấy danh sách đơn đã được đánh giá
+    useEffect(() => {
+        const fetchReviewedOrders = async () => {
+            if (!currentUser) return;
+            try {
+                const q = query(
+                    collection(db, 'reviews'),
+                    where('userId', '==', currentUser.uid)
+                );
+                const snap = await getDocs(q);
+                const ids = new Set<string>();
+                snap.docs.forEach(d => {
+                    const orderId = d.data().orderId;
+                    if (orderId) ids.add(orderId);
+                });
+                setReviewedOrderIds(ids);
+            } catch (e) {
+                console.error('Lỗi kiểm tra đánh giá:', e);
+            }
+        };
+        fetchReviewedOrders();
+    }, [currentUser]);
 
     // Hàm phụ trợ dịch trạng thái sang tiếng Việt
     const getStatusText = (status: string) => {
@@ -114,17 +138,27 @@ export default function OrderHistoryScreen() {
 
                                 {(item.status === 'delivered' || item.status === 'completed') && (
                                     <TouchableOpacity 
-                                        style={[styles.reviewBtn, { flex: 1, marginLeft: 5 }]} 
+                                        style={[
+                                            styles.reviewBtn, { flex: 1, marginLeft: 5 },
+                                            reviewedOrderIds.has(item.id) && styles.reviewBtnDone
+                                        ]} 
                                         onPress={() => {
                                             if (item.items && item.items.length > 0) {
-                                                // Mặc định truyền sản phẩm đầu tiên để đánh giá
-                                                (navigation.navigate as any)('Review', { product: item.items[0] });
+                                                (navigation.navigate as any)('Review', {
+                                                    product: item.items[0],
+                                                    orderId: item.id,
+                                                });
                                             } else {
                                                 Alert.alert('Lỗi', 'Đơn hàng không có sản phẩm để đánh giá.');
                                             }
                                         }}
                                     >
-                                        <Text style={styles.reviewBtnText}>⭐ Đánh giá</Text>
+                                        <Text style={[
+                                            styles.reviewBtnText,
+                                            reviewedOrderIds.has(item.id) && styles.reviewBtnTextDone
+                                        ]}>
+                                            {reviewedOrderIds.has(item.id) ? '✏️ Sửa đánh giá' : '⭐ Đánh giá'}
+                                        </Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -159,5 +193,7 @@ const styles = StyleSheet.create({
     chatBtn: { backgroundColor: '#E3F2FD', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
     chatBtnText: { color: '#1976D2', fontSize: 14, fontWeight: 'bold' },
     reviewBtn: { backgroundColor: '#FFF3E0', padding: 12, borderRadius: 8, alignItems: 'center' },
-    reviewBtnText: { color: '#F57C00', fontSize: 14, fontWeight: 'bold' }
+    reviewBtnText: { color: '#F57C00', fontSize: 14, fontWeight: 'bold' },
+    reviewBtnDone: { backgroundColor: '#E8F5E9' },
+    reviewBtnTextDone: { color: '#2E7D32' },
 });
