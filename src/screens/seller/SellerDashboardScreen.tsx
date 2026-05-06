@@ -1,6 +1,6 @@
 // src/screens/SellerDashboardScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { collection, doc, updateDoc, query, where, onSnapshot, writeBatch, increment } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
@@ -11,6 +11,7 @@ export default function SellerDashboardScreen() {
     const { currentUser } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('pending');
 
     useEffect(() => {
         if (!currentUser) return;
@@ -97,8 +98,14 @@ export default function SellerDashboardScreen() {
             case 'pending': return '⏳ Chờ xử lý';
             case 'ready_to_ship': return '📦 Đang chuẩn bị';
             case 'shipping': return '🚚 Đang giao';
-            case 'delivered': return '✅ Hoàn tất';
+            case 'delivered': return '📦 Shipper đã giao';
+            case 'completed': return '✅ Hoàn tất';
+            case 'cod_pending_reconcile': return '⏳ Chờ đối soát COD';
             case 'canceled': return '❌ Đã hủy';
+            case 'refund_pending': return '⏳ Khách xin hoàn tiền';
+            case 'return_pending': return '⏳ Khách xin trả hàng';
+            case 'refunded': return '🔄 Đã hoàn tiền';
+            case 'returned': return '🔄 Đã hoàn hàng';
             default: return status;
         }
     };
@@ -108,11 +115,25 @@ export default function SellerDashboardScreen() {
             case 'pending': return '#FFA000';
             case 'ready_to_ship': return '#1976D2';
             case 'shipping': return '#8E24AA';
-            case 'delivered': return '#388E3C';
+            case 'delivered': return '#1976D2';
+            case 'completed': return '#388E3C';
+            case 'cod_pending_reconcile': return '#F57C00';
             case 'canceled': return '#D32F2F';
+            case 'refund_pending':
+            case 'return_pending': return '#E64A19';
+            case 'refunded':
+            case 'returned': return '#455A64';
             default: return '#000';
         }
     };
+
+    const filteredOrders = orders.filter(order => {
+        if (activeTab === 'pending') return order.status === 'pending';
+        if (activeTab === 'shipping') return ['ready_to_ship', 'shipping'].includes(order.status);
+        if (activeTab === 'completed') return ['delivered', 'completed', 'cod_pending_reconcile'].includes(order.status);
+        if (activeTab === 'refunded') return ['canceled', 'refunded', 'returned', 'refund_pending', 'return_pending'].includes(order.status);
+        return true;
+    });
 
     if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color="#2E7D32" />;
 
@@ -120,13 +141,30 @@ export default function SellerDashboardScreen() {
         <View style={styles.container}>
             <Text style={styles.title}>Đơn Hàng Của Shop 📦</Text>
 
-            {orders.length === 0 ? (
+            <View style={styles.tabContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'pending' && styles.tabBtnActive]} onPress={() => setActiveTab('pending')}>
+                        <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Chờ xử lý</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'shipping' && styles.tabBtnActive]} onPress={() => setActiveTab('shipping')}>
+                        <Text style={[styles.tabText, activeTab === 'shipping' && styles.tabTextActive]}>Đang chuẩn bị</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'completed' && styles.tabBtnActive]} onPress={() => setActiveTab('completed')}>
+                        <Text style={[styles.tabText, activeTab === 'completed' && styles.tabTextActive]}>Xử lý đơn hàng</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'refunded' && styles.tabBtnActive]} onPress={() => setActiveTab('refunded')}>
+                        <Text style={[styles.tabText, activeTab === 'refunded' && styles.tabTextActive]}>Hoàn/Hủy</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+
+            {filteredOrders.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>Chưa có đơn hàng nào cho sản phẩm của bạn.</Text>
+                    <Text style={styles.emptyText}>Chưa có đơn hàng nào.</Text>
                 </View>
             ) : (
                 <FlatList
-                    data={orders}
+                    data={filteredOrders}
                     keyExtractor={item => item.id}
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => (
@@ -164,7 +202,7 @@ export default function SellerDashboardScreen() {
                             </View>
 
                             {/* Nút hành động */}
-                            {item.status !== 'delivered' && item.status !== 'canceled' && (
+                            {['pending', 'ready_to_ship', 'shipping'].includes(item.status) && (
                                 <TouchableOpacity
                                     style={[styles.btnAction, { backgroundColor: '#2E7D32' }]}
                                     onPress={() => updateOrderStatus(item, item.status)}
@@ -175,6 +213,13 @@ export default function SellerDashboardScreen() {
                                                 'Xác nhận đã giao thành công ❯'}
                                     </Text>
                                 </TouchableOpacity>
+                            )}
+
+                            {/* Thông báo hàng đang hoàn về */}
+                            {item.status === 'returned' && (
+                                <View style={styles.returnNotice}>
+                                    <Text style={styles.returnNoticeText}>⚠️ Hàng của bạn đang được hoàn về</Text>
+                                </View>
                             )}
 
                             <TouchableOpacity
@@ -213,5 +258,12 @@ const styles = StyleSheet.create({
     btnAction: { padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 8 },
     btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
     chatBtn: { backgroundColor: '#E8F5E9', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-    chatBtnText: { color: '#2E7D32', fontSize: 14, fontWeight: 'bold' }
+    chatBtnText: { color: '#2E7D32', fontSize: 14, fontWeight: 'bold' },
+    tabContainer: { marginBottom: 15 },
+    tabBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#E5E7EB', marginRight: 10 },
+    tabBtnActive: { backgroundColor: '#2E7D32' },
+    tabText: { color: '#4B5563', fontWeight: 'bold', fontSize: 13 },
+    tabTextActive: { color: '#fff' },
+    returnNotice: { backgroundColor: '#FFEBEE', padding: 10, borderRadius: 8, marginTop: 10, alignItems: 'center', borderWidth: 1, borderColor: '#FFCDD2' },
+    returnNoticeText: { color: '#C62828', fontWeight: 'bold', fontSize: 13 }
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { collection, query, where, getDocs, onSnapshot, doc, writeBatch, increment } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,6 +11,7 @@ export default function OrderHistoryScreen() {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(new Set());
+    const [activeTab, setActiveTab] = useState('all');
     const navigation = useNavigation<AppNavigationProp>();
 
     useEffect(() => {
@@ -73,6 +74,10 @@ export default function OrderHistoryScreen() {
         if (status === 'canceled') return 'Đã hủy';
         if (status === 'ready_to_ship') return 'Đang chuẩn bị';
         if (status === 'shipping') return 'Đang giao hàng';
+        if (status === 'refund_pending') return 'Chờ duyệt hoàn tiền';
+        if (status === 'return_pending') return 'Chờ duyệt trả hàng';
+        if (status === 'refunded') return 'Đã hoàn tiền';
+        if (status === 'returned') return 'Đã trả hàng';
         return 'Đang xử lý';
     };
 
@@ -82,6 +87,8 @@ export default function OrderHistoryScreen() {
         if (status === 'cod_pending_reconcile') return '#F57C00';
         if (status === 'canceled') return '#D32F2F';
         if (status === 'shipping') return '#8E24AA';
+        if (status === 'refund_pending' || status === 'return_pending') return '#E64A19';
+        if (status === 'refunded' || status === 'returned') return '#455A64';
         return '#FFA000';
     };
 
@@ -154,18 +161,79 @@ export default function OrderHistoryScreen() {
         }
     };
 
+    const handleRequestRefund = (order: any) => {
+        const isCOD = order.paymentMethod === 'cod';
+        Alert.alert(
+            '⚠️ Yêu cầu hoàn trả',
+            isCOD
+                ? 'Bạn muốn từ chối nhận hàng và hoàn trả lại cho Shop?'
+                : 'Bạn muốn yêu cầu hoàn tiền cho đơn hàng này?',
+            [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                    text: 'Xác nhận',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const newStatus = isCOD ? 'return_pending' : 'refund_pending';
+                            const orderRef = doc(db, 'orders', order.id);
+                            await writeBatch(db).update(orderRef, { status: newStatus }).commit();
+                            Alert.alert('Thành công', 'Đã gửi yêu cầu. Vui lòng chờ Admin duyệt.');
+                            setOrders(prev => prev.map(o =>
+                                o.id === order.id ? { ...o, status: newStatus } : o
+                            ));
+                        } catch (error) {
+                            console.error('Lỗi yêu cầu hoàn trả:', error);
+                            Alert.alert('Lỗi', 'Không thể gửi yêu cầu hoàn trả.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const filteredOrders = orders.filter(order => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'pending') return order.status === 'pending';
+        if (activeTab === 'shipping') return ['ready_to_ship', 'shipping'].includes(order.status);
+        if (activeTab === 'completed') return ['delivered', 'completed', 'cod_pending_reconcile'].includes(order.status);
+        if (activeTab === 'refunded') return ['canceled', 'refunded', 'returned', 'refund_pending', 'return_pending'].includes(order.status);
+        return true;
+    });
+
     if (loading) return <ActivityIndicator style={{ flex: 1, marginTop: 50 }} size="large" color="#FF6F00" />;
 
     return (
         <View style={styles.container}>
-            {orders.length === 0 ? (
+            <View style={styles.tabContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'all' && styles.tabBtnActive]} onPress={() => setActiveTab('all')}>
+                        <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>Tất cả</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'pending' && styles.tabBtnActive]} onPress={() => setActiveTab('pending')}>
+                        <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Chờ xử lý</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'shipping' && styles.tabBtnActive]} onPress={() => setActiveTab('shipping')}>
+                        <Text style={[styles.tabText, activeTab === 'shipping' && styles.tabTextActive]}>Đang giao</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'completed' && styles.tabBtnActive]} onPress={() => setActiveTab('completed')}>
+                        <Text style={[styles.tabText, activeTab === 'completed' && styles.tabTextActive]}>Hoàn tất</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.tabBtn, activeTab === 'refunded' && styles.tabBtnActive]} onPress={() => setActiveTab('refunded')}>
+                        <Text style={[styles.tabText, activeTab === 'refunded' && styles.tabTextActive]}>Hoàn/Hủy</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+
+            {filteredOrders.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>Bạn chưa có đơn hàng nào.</Text>
                 </View>
             ) : (
                 <FlatList
-                    data={orders}
+                    data={filteredOrders}
                     keyExtractor={item => item.id}
+                    showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => (
                         <View style={styles.card}>
                             <View style={styles.headerRow}>
@@ -260,6 +328,16 @@ export default function OrderHistoryScreen() {
                                     </TouchableOpacity>
                                 )}
                             </View>
+
+                            {/* Nút Yêu cầu hoàn trả */}
+                            {['pending', 'ready_to_ship', 'shipping', 'delivered', 'cod_pending_reconcile'].includes(item.status) && (
+                                <TouchableOpacity
+                                    style={styles.refundBtn}
+                                    onPress={() => handleRequestRefund(item)}
+                                >
+                                    <Text style={styles.refundBtnText}>⚠️ Yêu cầu hoàn tiền / trả hàng</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     )}
                 />
@@ -304,4 +382,14 @@ const styles = StyleSheet.create({
         alignItems: 'center', borderWidth: 1, borderColor: '#FFE082', marginBottom: 8
     },
     pendingBadgeText: { color: '#F57F17', fontSize: 13, fontWeight: '600' },
+    refundBtn: {
+        backgroundColor: '#FFEBEE', padding: 12, borderRadius: 8,
+        alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: '#FFCDD2'
+    },
+    refundBtnText: { color: '#C62828', fontSize: 14, fontWeight: 'bold' },
+    tabContainer: { marginBottom: 15 },
+    tabBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#E0E0E0', marginRight: 10 },
+    tabBtnActive: { backgroundColor: '#FF6F00' },
+    tabText: { color: '#555', fontWeight: 'bold', fontSize: 13 },
+    tabTextActive: { color: '#fff' },
 });

@@ -33,6 +33,7 @@ import SellerWalletScreen from '../screens/seller/SellerWalletScreen';
 // Import Screens Admin
 import AdminReconcileScreen from '../screens/admin/AdminReconcileScreen';
 import AdminPayoutScreen from '../screens/admin/AdminPayoutScreen';
+import AdminRefundScreen from '../screens/admin/AdminRefundScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -163,6 +164,15 @@ function AdminTabs() {
                     title: 'Giải Ngân',
                     headerTitle: '💸 Giải Ngân Seller',
                     tabBarIcon: () => <Text style={{ fontSize: 20 }}>💸</Text>
+                }}
+            />
+            <Tab.Screen
+                name="AdminRefund"
+                component={AdminRefundScreen}
+                options={{
+                    title: 'Hoàn Tiền',
+                    headerTitle: '🔄 Hoàn Tiền / Trả Hàng',
+                    tabBarIcon: () => <Text style={{ fontSize: 20 }}>🔄</Text>
                 }}
             />
         </Tab.Navigator>

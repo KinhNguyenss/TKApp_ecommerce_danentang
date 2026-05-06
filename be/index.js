@@ -35,9 +35,37 @@ app.post('/create-payment-intent', async (req, res) => {
             automatic_payment_methods: { enabled: true },
         });
 
-        res.json({ clientSecret: paymentIntent.client_secret });
+        res.json({ 
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id 
+        });
     } catch (error) {
         console.error('Stripe error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /refund-payment
+ * Body: { paymentIntentId: string }
+ */
+app.post('/refund-payment', async (req, res) => {
+    console.log('--- Nhận yêu cầu hoàn tiền ---');
+    console.log('Body:', req.body);
+    try {
+        const { paymentIntentId } = req.body;
+
+        if (!paymentIntentId) {
+            return res.status(400).json({ error: 'Thiếu paymentIntentId.' });
+        }
+
+        const refund = await stripe.refunds.create({
+            payment_intent: paymentIntentId,
+        });
+
+        res.json({ success: true, refund });
+    } catch (error) {
+        console.error('Stripe refund error:', error);
         res.status(500).json({ error: error.message });
     }
 });

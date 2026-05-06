@@ -64,7 +64,7 @@ export default function CheckoutScreen() {
         fetchUserInfo();
     }, [currentUser]);
 
-    const saveOrderToFirestore = async (status: 'pending' | 'paid') => {
+    const saveOrderToFirestore = async (status: 'pending' | 'paid', paymentIntentId?: string) => {
         const batch = writeBatch(db);
 
         // Nhóm sản phẩm theo từng shop để tạo đơn riêng biệt
@@ -95,6 +95,7 @@ export default function CheckoutScreen() {
                 sellerIds: [sellerId],
                 total: sellerTotal,
                 createdAt: serverTimestamp(),
+                paymentIntentId: paymentIntentId || null,
             });
 
             // Nếu thanh toán thẻ → cộng tiền chờ cho shop đó
@@ -136,7 +137,7 @@ export default function CheckoutScreen() {
                     throw new Error('Không thể kết nối đến server thanh toán.');
                 }
 
-                const { clientSecret } = await response.json();
+                const { clientSecret, paymentIntentId } = await response.json();
 
                 // 2. Khởi tạo Payment Sheet
                 const { error: initError } = await initPaymentSheet({
@@ -158,8 +159,8 @@ export default function CheckoutScreen() {
                     }
                 } else {
                     // 4. Thanh toán thành công → lưu đơn hàng
-                    await saveOrderToFirestore('paid');
-                    Alert.alert('Thanh toán thành công! 🎉', 'Đơn hàng đã được xác nhận và sẽ được cẩn bị gần nhất!', [
+                    await saveOrderToFirestore('paid', paymentIntentId);
+                    Alert.alert('Thanh toán thành công! 🎉', 'Đơn hàng đã được xác nhận và sẽ được chuẩn bị gần nhất!', [
                         { text: 'OK', onPress: () => navigation.navigate('CustomerFlow') }
                     ]);
                 }
