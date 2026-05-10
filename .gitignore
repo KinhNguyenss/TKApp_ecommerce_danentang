@@ -47,3 +47,4 @@ serviceAccountKey.json
 be/serviceAccountKey.json
 *.json.key
 
+.env
