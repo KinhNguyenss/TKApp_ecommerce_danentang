@@ -32,162 +32,117 @@ function getRandomVietnameseName() {
   return `${ho} ${tenDem} ${ten}`;
 }
 
-// --- TÊN CỬA HÀNG THỰC TẾ ---
+// --- TÊN CỬA HÀNG THỦ CÔNG (HANDMADE SHOPS) ---
 const SHOP_NAMES = [
-  'TechZone VN Official', 
-  'Hải Đăng Mobile', 
-  'Mỹ Phẩm Coco Cosmetics',
-  'Gia Dụng Thông Minh 247', 
-  'Kệ Sách Của Gấu', 
-  'Lego & Toys Kids Store',
-  'Gym & FitBox', 
-  'Adam Store - Thời Trang Nam', 
-  'Váy Xinh Boutique', 
-  'Điện Máy Sunhouse Chính Hãng'
+  'Tiệm Gốm An Yên', 
+  'Nắng Macrame & Craft', 
+  'Mộc Leather Workshop',
+  'Nến Thơm Chạng Vạng', 
+  'Tiệm Len Của Lơ', 
+  'Trạm Thêu Tay',
+  'Đá Cuội Jewelry', 
+  'Góc Nhà Mộc Mạc (Home Decor)', 
+  'Xưởng Gỗ Nhỏ', 
+  'Tiệm Hoa Khô Bình Minh'
 ];
 
-// --- SẢN PHẨM GẮN LIỀN VỚI THƯƠNG HIỆU THẬT VÀ LINK ẢNH ---
+// --- SẢN PHẨM HANDMADE VÀ LINK ẢNH ---
 const SAMPLE_PRODUCTS = [
+  // Nhóm: Gốm sứ
   {
-    name: "Tai nghe Bluetooth Sony WF-1000XM4",
-    desc: "Tai nghe chống ồn chủ động cao cấp từ Sony, pin 24h",
-    basePrice: 4500000,
-    category: "Điện tử",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/189ecc4fd3253dfceb2b872e1c254d0872ac76c5.jpg",
+    name: "Cốc Gốm Men Hỏa Biến Vuốt Tay",
+    desc: "Cốc gốm nung củi truyền thống, mỗi chiếc là một vân men duy nhất không đụng hàng.",
+    basePrice: 180000,
+    category: "Gốm sứ",
+    imgUrl: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcTVjC257mfWPeHIZyTo_55tug7mWr9u20MZbN1cujOZTCvzsHfSOqgSbhEtRcrYJqLDxeaU6BXjKNU0q4RpMKx8v0eh1K5f45MPnxSnHrUNH4sjoNTWeAzoTKthYjdY2azSFFQvBdxd-Q&usqp=CAc",
   },
   {
-    name: "Đồng hồ thông minh Apple Watch SE",
-    desc: "Đồng hồ theo dõi sức khỏe, đo nhịp tim chính hãng VN/A",
-    basePrice: 6500000,
-    category: "Điện tử",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/cad9f7b0b7d12e68ded1c94af91696764160a631.jpg",
+    name: "Bình Hoa Gốm Mộc Kiểu Nhật",
+    desc: "Bình cắm hoa phong cách Wabi Sabi, bề mặt nhám tự nhiên.",
+    basePrice: 350000,
+    category: "Gốm sứ",
+    imgUrl: "https://gomnhatnakano.com/img/thumb_img-8221.jpg",
+  },
+
+  // Nhóm: Len & Macrame
+  {
+    name: "Túi Tote Đan Macrame Phong Cách Boho",
+    desc: "Túi xách đan tay từ sợi cotton thân thiện môi trường, phù hợp đi biển.",
+    basePrice: 420000,
+    category: "Đan Len & Macrame",
+    imgUrl: "https://image.made-in-china.com/202f0j00TdeWyskKPOpS/Popular-Cotton-Rope-Hollow-Straw-Bag-Macrame-Tote-Bohemian-Ultralight-Shoulder-Bag-Net-Bag-.webp",
   },
   {
-    name: "Loa Bluetooth JBL Flip 6",
-    desc: "Loa di động âm bass cực đỉnh, chống nước IP67",
-    basePrice: 2200000,
-    category: "Điện tử",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/cf69c25c14259a9c18302755e254d133dbd7c0c3.jpg",
-  },
-  {
-    name: "Sạc dự phòng Anker PowerCore 10000mAh",
-    desc: "Sạc nhanh siêu tốc 20W, thiết kế nhỏ gọn",
-    basePrice: 650000,
-    category: "Điện tử",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/47d99c27d089bfd4d70d771e2255ed25992b364e.jpg",
-  },
-  {
-    name: "Áo thun nam cotton Coolmate",
-    desc: "Áo thun mặc mát mẻ mùa hè, chống nhăn, kháng khuẩn",
-    basePrice: 250000,
-    category: "Thời trang",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/4a866469b42081d201b04adc8707261ea282f896.jpg",
-  },
-  {
-    name: "Váy nữ hoạ tiết hoa Marc Fashion",
-    desc: "Váy đi biển phong cách vintage, chất liệu lụa mềm",
-    basePrice: 450000,
-    category: "Thời trang",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/63ccd4b05b412b22e683e46d6f600b770e981f9e.jpg",
-  },
-  {
-    name: "Quần Jeans nam Levi's 501 ống đứng",
-    desc: "Quần jeans chất bò co giãn chính hãng, độ bền cao",
-    basePrice: 1200000,
-    category: "Thời trang",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/8de2bca146adb8eaacf8e5d78d826d133ec07023.jpg",
-  },
-  {
-    name: "Túi xách nữ da thật Juno",
-    desc: "Túi xách thời trang công sở cao cấp",
-    basePrice: 720000,
-    category: "Thời trang",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/ffc746d1446ca468166061d53c2f8b6c1cea04d9.jpg",
-  },
-  {
-    name: "Máy xay sinh tố Philips HR2221",
-    desc: "Máy xay sinh tố đa năng 5 tốc độ, công suất 700W",
-    basePrice: 1150000,
-    category: "Gia dụng",
-    imgUrl: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/137d58fd-e783-5c1a-a1b5-6a8542de6ac7/c1fa9505-eea6-59ed-ae06-a866cd21a978.jpg",
-  },
-  {
-    name: "Nồi chiên không dầu Lock&Lock 5.2L",
-    desc: "Nồi chiên điện tử công nghệ nướng chân không",
-    basePrice: 1850000,
-    category: "Gia dụng",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/875ef18683892e3af0c27eb8933ace7cf8349c77.jpg",
-  },
-  {
-    name: "Máy hút bụi cầm tay không dây Xiaomi",
-    desc: "Lực hút mạnh 50AW, trọng lượng siêu nhẹ 1.2kg",
-    basePrice: 2100000,
-    category: "Gia dụng",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/403eabf894ed19e0104ba81bddcb1aeb345c10b9.jpg",
-  },
-  {
-    name: "Bếp từ đơn Sunhouse SHD6861",
-    desc: "Bếp từ kèm nồi lẩu mâm đồng siêu bền",
-    basePrice: 650000,
-    category: "Gia dụng",
-    imgUrl: "https://cdn.tgdd.vn/Products/Images/1982/63975/tu-sieu-mong-sunhouse-shd-6861-2000w-1.jpg",
-  },
-  {
-    name: "Sách Đắc Nhân Tâm - Dale Carnegie",
-    desc: "Bản dịch chuẩn từ First News, bìa cứng",
+    name: "Thú Bông Len Amigurumi Thỏ Trắng",
+    desc: "Móc khóa/Thú bông móc bằng sợi len baby yarn an toàn cho trẻ em.",
     basePrice: 120000,
-    category: "Sách",
-    imgUrl: "https://pplx-res.cloudinary.com/image/upload/pplx_search_images/7c810fabc44790f17028dd58bbe0e54e94daee95.jpg",
+    category: "Đan Len & Macrame",
+    imgUrl: "https://bizweb.dktcdn.net/thumb/1024x1024/100/487/338/products/thu-bong-dan-len-tho-happy-vietnamoi-04.png?v=1688108466037",
   },
+
+  // Nhóm: Đồ Da Thủ Công
   {
-    name: "Tiểu thuyết Nhà Giả Kim - Paulo Coelho",
-    desc: "Cuốn sách bán chạy nhất mọi thời đại, tái bản 2023",
-    basePrice: 85000,
-    category: "Sách",
-    imgUrl: "https://i0.wp.com/asean.edu.vn/wp-content/uploads/2024/05/2.png?fit=250%2C350&ssl=1",
-  },
-  {
-    name: "Bộ xếp hình Lego City Cảnh Sát",
-    desc: "Đồ chơi phát triển trí tuệ, an toàn cho bé",
+    name: "Ví Nam Da Bò Sáp Khâu Tay",
+    desc: "Ví da sáp ngựa điên (Crazy Horse), khâu tay thủ công 100%, miễn phí khắc tên.",
     basePrice: 650000,
-    category: "Đồ chơi",
-    imgUrl: "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTjO3mIkWFX4ueDK_lzcFhCNu9wZLvAd_FHsKhpIC75O2EvXhtgaUq87xvYNIrc7yTPKWLSh7xOxLEJnc602aLoIrKegfzB5O6JxwFlpiwas5VvPvvVRJkDy6BTi-QCrUuzC02O6Q6-uQ&usqp=CAc",
+    category: "Đồ Da",
+    imgUrl: "https://bulltino.com/wp-content/uploads/2025/05/vi-nam-da-bo-sap-dang-dung-khau-tay-thu-cong-1.jpg",
   },
   {
-    name: "Siêu xe điều khiển từ xa RC Lamborghini",
-    desc: "Xe đua tốc độ cao, pin sạc USB",
-    basePrice: 350000,
-    category: "Đồ chơi",
-    imgUrl: "https://img.lazcdn.com/g/p/492df810a557b93ab9b0ede8a71253c7.jpg_720x720q80.jpg",
+    name: "Sổ Tay Bìa Da Đóng Gáy Vintage",
+    desc: "Sổ tay phác thảo bìa da thật, giấy kraft không tẩy trắng.",
+    basePrice: 280000,
+    category: "Đồ Da",
+    imgUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRaxvyOXNTKe7o5QfzNHkG-Gosqc3MEI8416g&s",
+  },
+
+  // Nhóm: Trang sức
+  {
+    name: "Vòng Tay Đá Phong Thủy Quấn Dây Đồng",
+    desc: "Đá Thạch Anh tím thiên nhiên quấn wire-wrap nghệ thuật.",
+    basePrice: 320000,
+    category: "Trang sức",
+    imgUrl: "https://giadinh.mediacdn.vn/296230595582509056/2026/3/23/vong-phong-thuy-17742586492282021035753.jpg",
   },
   {
-    name: "Kem dưỡng da ban đêm L'Oreal Paris",
-    desc: "Kem dưỡng ẩm trắng da mờ thâm nám 50ml",
-    basePrice: 350000,
-    category: "Làm đẹp",
-    imgUrl: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcSDSgXcvkLfTw5HuMf_a8YvgXFtnGEP7j9z0xecvcddgSC8uI7dDD3jGolfi5ulmr8UuzQ4puOFTqXIe7fiQ3v8zVLOIMI13l4LMRzxAXuHfFtrgtX7-7fKUlB_m0kmIF5EBkMrSg&usqp=CAc",
+    name: "Hoa Tai Đất Sét Nung Mẫu Hoa Cúc",
+    desc: "Khuyên tai làm từ polymer clay, nhẹ nặn tay tỉ mỉ từng cánh hoa.",
+    basePrice: 150000,
+    category: "Trang sức",
+    imgUrl: "https://chus.vn/images/detailed/204/1647352733_10062-14-f2_w767_h1105.jpg",
+  },
+
+  // Nhóm: Nến & Thơm
+  {
+    name: "Nến Thơm Sáp Đậu Nành Hương Rừng Thông",
+    desc: "Nến thơm tinh dầu thiên nhiên, bấc gỗ tạo tiếng lách tách khi đốt.",
+    basePrice: 250000,
+    category: "Nến & Sáp thơm",
+    imgUrl: "https://nenthomhafu.com/wp-content/uploads/2024/10/nen-thom-da-lat-3-scaled.jpg",
   },
   {
-    name: "Son thỏi MAC Ruby Woo",
-    desc: "Son lỳ màu đỏ huyền thoại quyến rũ phái đẹp",
-    basePrice: 580000,
-    category: "Làm đẹp",
-    imgUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGKkye_CRuqSV5q94rQwmbh0WWeYS25C--Ww&s",
+    name: "Sáp Thơm Treo Tủ Quần Áo Hoa Khô",
+    desc: "Sáp ong pha tinh dầu, trang trí hoa khô tự nhiên, khử mùi ẩm mốc.",
+    basePrice: 95000,
+    category: "Nến & Sáp thơm",
+    imgUrl: "https://liscent.vn/wp-content/uploads/2024/09/vn-11134207-7r98o-lvsdldecd97eeb.jpeg",
+  },
+
+  // Nhóm: Trang trí nhà cửa (Home Decor)
+  {
+    name: "Tranh Thêu Tay Treo Tường Khung Tre",
+    desc: "Tranh thêu tay họa tiết cỏ cây mùa xuân trên nền vải linen.",
+    basePrice: 450000,
+    category: "Trang trí",
+    imgUrl: "https://cdn.chus.vn/images/thumbnails/767/767/detailed/208/1647352564_10294-13-f2_w767_h1105.jpg.webp",
   },
   {
-    name: "Thảm tập Yoga định tuyến Liforme",
-    desc: "Thảm cao su tự nhiên bám dính siêu tốt, dày 4.2mm",
-    basePrice: 2100000,
-    category: "Thể thao",
-    imgUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHR5uqYWqgOSEtXuw7C7OqoCUCJFY4sPJiUA&s",
-  },
-  {
-    name: "Tạ Tay Bibo Bọc Cao Su",
-    desc: "Tạ tay tập gym tại nhà, lõi gang đặc",
-    basePrice: 350000,
-    category: "Thể thao",
-    imgUrl: "https://bizweb.dktcdn.net/100/144/271/files/18301088-807481849417390-7725329012757197099-n.jpg?v=1501899115630",
-  },
+    name: "Set 4 Lót Ly Mây Tre Đan Tay",
+    desc: "Tấm lót ly cách nhiệt từ sợi mây tự nhiên, thân thiện với môi trường.",
+    basePrice: 160000,
+    category: "Trang trí",
+    imgUrl: "https://tradaophuongdong.com/wp-content/uploads/2022/05/283878617_7414250081980293_9214539554017787410_n.jpg",
+  }
 ];
 
 async function clearAuthUsers() {
